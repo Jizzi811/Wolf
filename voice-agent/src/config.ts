@@ -1,16 +1,25 @@
 /**
  * Zentrale Konfiguration des CLOSER-Voice-Agents (Sektion 12).
  *
- * Alle austauschbaren Bausteine – Modell, Stimme, Sprache, Begrüßung – werden
- * hier gebündelt. Geheime Schlüssel werden NICHT hier hinterlegt, sondern
- * ausschließlich über Environment-Variablen bereitgestellt (Sektion 13).
+ * Alle austauschbaren Bausteine – Pipeline, Modelle, Stimme, Sprache,
+ * Begrüßung – werden hier gebündelt. Geheime Schlüssel werden NICHT hier
+ * hinterlegt, sondern ausschließlich über Environment-Variablen bereitgestellt
+ * (Sektion 13).
  *
- * WICHTIG: Die Standard-Modellnamen entsprechen dem offiziellen LiveKit
- * Node.js Agent-Starter (LiveKit Inference). Verfügbare Modelle und Stimmen
- * bitte in der LiveKit-Dokumentation prüfen, bevor sie geändert werden:
- *   LLM  -> https://docs.livekit.io/agents/models/llm/
- *   STT  -> https://docs.livekit.io/agents/models/stt/
- *   TTS  -> https://docs.livekit.io/agents/models/tts/
+ * Zwei Pipelines stehen zur Wahl:
+ *  - `inference`  : STT/LLM/TTS laufen über LiveKit Inference (kostet LiveKit).
+ *  - `providers`  : eigene Anbieter – Deepgram (STT) + OpenAI (LLM) + TTS
+ *                   (OpenAI oder Deepgram). So zahlst du nur bei deinen
+ *                   Anbietern; LiveKit dient nur als Audiotransport.
+ *
+ * Standard: automatisch `providers`, sobald DEEPGRAM_API_KEY UND OPENAI_API_KEY
+ * gesetzt sind – sonst `inference`. Über CLOSER_PIPELINE erzwingbar.
+ *
+ * WICHTIG: Verfügbare Modelle/Stimmen in der jeweiligen Doku prüfen, bevor sie
+ * geändert werden. Für deutsche Sprachausgabe eignet sich OpenAI-TTS oder eine
+ * mehrsprachige/deutsche Deepgram-Aura-2-Stimme (z. B. "Julius"): dafür die
+ * exakte Deepgram-Modell-ID in CLOSER_DEEPGRAM_TTS_MODEL setzen und
+ * CLOSER_TTS_PROVIDER=deepgram wählen. Ältere Aura-Stimmen sind nur Englisch.
  */
 
 function env(name: string, fallback: string): string {
@@ -18,27 +27,58 @@ function env(name: string, fallback: string): string {
   return value && value.trim().length > 0 ? value.trim() : fallback;
 }
 
+function hasEnv(name: string): boolean {
+  const value = process.env[name];
+  return Boolean(value && value.trim().length > 0);
+}
+
+export type Pipeline = 'inference' | 'providers';
+export type TtsProvider = 'openai' | 'deepgram';
+
+function resolvePipeline(): Pipeline {
+  const explicit = env('CLOSER_PIPELINE', '').toLowerCase();
+  if (explicit === 'inference' || explicit === 'providers') {
+    return explicit;
+  }
+  // Auto: eigene Anbieter nur, wenn beide Schlüssel vorhanden sind.
+  return hasEnv('DEEPGRAM_API_KEY') && hasEnv('OPENAI_API_KEY') ? 'providers' : 'inference';
+}
+
 export interface CloserConfig {
   /** Anzeigename / Dispatch-Name des Agenten (muss zum Frontend passen). */
   agentName: string;
   /** Standardsprache; der Agent passt sich der Nutzersprache an. */
   language: string;
-  llm: {
-    /** LiveKit-Inference-Modellkennung für das Sprachmodell. */
-    model: string;
+  /** Aktive Sprachpipeline. */
+  pipeline: Pipeline;
+
+  /** Modelle für die LiveKit-Inference-Pipeline. */
+  inference: {
+    llm: string;
+    stt: string;
+    sttLanguage: string;
+    tts: string;
+    ttsVoice: string;
   };
-  stt: {
-    /** Speech-to-Text-Modell. */
-    model: string;
-    /** Erkennungssprache ("multi" = automatische Mehrsprachigkeit). */
-    language: string;
+
+  /** Modelle/Stimmen für die eigene Anbieter-Pipeline (Deepgram + OpenAI). */
+  providers: {
+    /** OpenAI-Sprachmodell (das "Gehirn"). */
+    llm: string;
+    /** Deepgram-STT-Modell (das "Ohr"). */
+    stt: string;
+    /** Deepgram-Erkennungssprache ("multi" = automatisch mehrsprachig). */
+    sttLanguage: string;
+    /** Welcher Anbieter die Stimme liefert. */
+    ttsProvider: TtsProvider;
+    /** OpenAI-TTS-Modell (mehrsprachig, deutschtauglich). */
+    openaiTtsModel: string;
+    /** OpenAI-TTS-Stimme (KEINE reale Person klonen). */
+    openaiTtsVoice: string;
+    /** Deepgram-TTS-Modell-ID (Aura/Aura-2; deutsche Stimme via exakter ID). */
+    deepgramTtsModel: string;
   };
-  tts: {
-    /** Text-to-Speech-Modell. */
-    model: string;
-    /** Stimmen-ID des TTS-Anbieters (KEINE reale Person klonen). */
-    voice: string;
-  };
+
   /** Vom Agenten beim Verbindungsaufbau gesprochene Standardbegrüßung. */
   greeting: string;
   /** Ausführliche Logausgaben aktivieren. */
@@ -48,21 +88,32 @@ export interface CloserConfig {
 export const config: CloserConfig = {
   agentName: env('AGENT_NAME', 'CLOSER'),
   language: env('CLOSER_LANGUAGE', 'de'),
+  pipeline: resolvePipeline(),
 
-  llm: {
-    model: env('CLOSER_LLM_MODEL', 'google/gemma-4-31b-it'),
+  inference: {
+    // Standardwerte aus dem offiziellen LiveKit Node-Starter.
+    llm: env('CLOSER_LLM_MODEL', 'google/gemma-4-31b-it'),
+    stt: env('CLOSER_STT_MODEL', 'deepgram/nova-3'),
+    sttLanguage: env('CLOSER_STT_LANGUAGE', 'multi'),
+    tts: env('CLOSER_TTS_MODEL', 'cartesia/sonic-3'),
+    ttsVoice: env('VOICE_ID', '9626c31c-bec5-4cca-baa8-f8ba9e84c8bc'),
   },
 
-  stt: {
-    model: env('CLOSER_STT_MODEL', 'deepgram/nova-3'),
-    language: env('CLOSER_STT_LANGUAGE', 'multi'),
-  },
-
-  tts: {
-    model: env('CLOSER_TTS_MODEL', 'cartesia/sonic-3'),
-    // Neutrale Standardstimme aus dem offiziellen Starter – über VOICE_ID
-    // austauschbar. Niemals die Stimme einer realen Person klonen (Sektion 0).
-    voice: env('VOICE_ID', '9626c31c-bec5-4cca-baa8-f8ba9e84c8bc'),
+  providers: {
+    // OpenAI GPT als LLM (gut für Deutsch). Modell in der OpenAI-Doku prüfen.
+    llm: env('CLOSER_LLM_MODEL', 'gpt-4o-mini'),
+    // Deepgram nova-3 versteht u. a. Deutsch.
+    stt: env('CLOSER_STT_MODEL', 'nova-3'),
+    sttLanguage: env('CLOSER_STT_LANGUAGE', 'multi'),
+    // Standardstimme über OpenAI-TTS, da deutschtauglich.
+    ttsProvider:
+      env('CLOSER_TTS_PROVIDER', 'openai').toLowerCase() === 'deepgram' ? 'deepgram' : 'openai',
+    openaiTtsModel: env('CLOSER_OPENAI_TTS_MODEL', 'gpt-4o-mini-tts'),
+    // Tiefe, selbstbewusste Stimme passend zum Closer-Charakter.
+    openaiTtsVoice: env('CLOSER_TTS_VOICE', 'onyx'),
+    // Nur relevant bei CLOSER_TTS_PROVIDER=deepgram. Für eine deutsche Stimme
+    // die exakte Deepgram-Modell-ID (z. B. eine Aura-2-"Julius"-Variante) setzen.
+    deepgramTtsModel: env('CLOSER_DEEPGRAM_TTS_MODEL', 'aura-2-zeus-en'),
   },
 
   greeting: env(

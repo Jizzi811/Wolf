@@ -85,8 +85,10 @@ pnpm start
 4. `AGENT_NAME` in beiden Dateien identisch setzen (Standard: `CLOSER`) für
    expliziten Dispatch – oder in beiden leer lassen für automatischen Dispatch.
 
-Die Standard-Sprachpipeline nutzt **LiveKit Inference**: LLM, STT und TTS
-laufen über die LiveKit-Zugangsdaten, **ohne** separate Provider-Keys.
+Für die **KI** (Hören/Denken/Sprechen) gibt es zwei Wege: eigene Anbieter
+(Deepgram + OpenAI, empfohlen und günstig) oder LiveKit Inference. Details in
+Abschnitt 10. LiveKit selbst wird in beiden Fällen als **Audiotransport**
+benötigt.
 
 ---
 
@@ -105,20 +107,33 @@ laufen über die LiveKit-Zugangsdaten, **ohne** separate Provider-Keys.
 
 ### Voice-Agent – `voice-agent/.env.local` (aus `voice-agent/.env.example`)
 
-| Variable               | Zweck                                                            |
-| ---------------------- | ---------------------------------------------------------------- |
-| `LIVEKIT_URL`          | WebSocket-URL des LiveKit-Projekts                               |
-| `LIVEKIT_API_KEY`      | API-Key                                                          |
-| `LIVEKIT_API_SECRET`   | API-Secret                                                       |
-| `AGENT_NAME`           | Agentenname / Dispatch-Name (Standard `CLOSER`)                  |
-| `VOICE_ID`             | Stimmen-ID des TTS-Anbieters (leer = Standardstimme)             |
-| `CLOSER_LLM_MODEL`     | Optional: LLM-Modell überschreiben                               |
-| `CLOSER_STT_MODEL`     | Optional: Speech-to-Text-Modell überschreiben                    |
-| `CLOSER_TTS_MODEL`     | Optional: Text-to-Speech-Modell überschreiben                    |
-| `CLOSER_LANGUAGE`      | Optional: Standardsprache (Standard `de`)                        |
-| `CLOSER_GREETING`      | Optional: Begrüßungstext überschreiben                           |
-| `LEAD_CAPTURE_ENABLED` | Lead-Erfassung aktivieren (Standard `false`, siehe Abschnitt 13) |
-| `CLOSER_DEBUG`         | Ausführliche Logausgaben (`true`/`false`)                        |
+| Variable                    | Zweck                                                          |
+| --------------------------- | -------------------------------------------------------------- |
+| `LIVEKIT_URL`               | WebSocket-URL des LiveKit-Projekts (nur Audiotransport)        |
+| `LIVEKIT_API_KEY`           | API-Key                                                        |
+| `LIVEKIT_API_SECRET`        | API-Secret                                                     |
+| `AGENT_NAME`                | Agentenname / Dispatch-Name (Standard `CLOSER`)                |
+| `CLOSER_PIPELINE`           | `providers` oder `inference` (leer = automatisch, siehe unten) |
+| `DEEPGRAM_API_KEY`          | Deepgram: Hören (STT) und optional Stimme (TTS)                |
+| `OPENAI_API_KEY`            | OpenAI: Denken (LLM/GPT) und Standard-Stimme (TTS)             |
+| `CLOSER_TTS_PROVIDER`       | `openai` (Deutsch, Standard) oder `deepgram`                   |
+| `CLOSER_TTS_VOICE`          | OpenAI-Stimme (z. B. `onyx`, `ash`, `sage`)                    |
+| `CLOSER_DEEPGRAM_TTS_MODEL` | Deepgram-Stimme (exakte Modell-ID, z. B. deutsche Aura-2)      |
+| `CLOSER_LLM_MODEL`          | Optional: LLM-Modell überschreiben                             |
+| `CLOSER_STT_MODEL`          | Optional: STT-Modell überschreiben                             |
+| `CLOSER_LANGUAGE`           | Optional: Standardsprache (Standard `de`)                      |
+| `CLOSER_GREETING`           | Optional: Begrüßungstext überschreiben                         |
+| `LEAD_CAPTURE_ENABLED`      | Lead-Erfassung aktivieren (Standard `false`, Abschnitt 13)     |
+| `CLOSER_DEBUG`              | Ausführliche Logausgaben (`true`/`false`)                      |
+
+**Zwei Pipelines** (Abschnitt 10):
+
+- **`providers`** (empfohlen, günstig): Deepgram (STT) + OpenAI (LLM) + Stimme
+  (OpenAI oder Deepgram). LiveKit dient nur als Audiotransport – **keine
+  LiveKit-Inference-Kosten**. Aktiv, sobald `DEEPGRAM_API_KEY` **und**
+  `OPENAI_API_KEY` gesetzt sind.
+- **`inference`**: STT/LLM/TTS über LiveKit Inference (ohne separate Keys, aber
+  kostenpflichtig bei LiveKit).
 
 > **Sicherheit:** API-Secrets gehören ausschließlich serverseitig. Niemals in
 > `NEXT_PUBLIC_`-Variablen speichern, niemals echte Schlüssel committen.
@@ -168,24 +183,49 @@ zusammengeführt.
 
 ---
 
-## 10. Stimme und Modelle ändern
+## 10. Pipeline, Stimme und Modelle ändern
 
-Alle austauschbaren Bausteine sind in **`voice-agent/src/config.ts`** gebündelt:
+Alle austauschbaren Bausteine sind in **`voice-agent/src/config.ts`** gebündelt
+und über Environment-Variablen steuerbar (`voice-agent/.env.local`).
 
-- `llm.model` – Sprachmodell (Intelligenz)
-- `stt.model` / `stt.language` – Spracherkennung (`multi` = automatisch mehrsprachig)
-- `tts.model` / `tts.voice` – Stimme
+### Pipeline „providers" (empfohlen – nutzt deine eigenen Keys)
 
-Am einfachsten per Environment-Variable überschreiben (`CLOSER_LLM_MODEL`,
-`CLOSER_STT_MODEL`, `CLOSER_TTS_MODEL`, `VOICE_ID`).
+Deepgram (Hören) + OpenAI (Denken) + Stimme (OpenAI **oder** Deepgram). LiveKit
+ist dann nur das Audiokabel – **keine LiveKit-Inference-Kosten**. Aktiviert sich
+automatisch, sobald beide Keys gesetzt sind:
 
-> **Wichtig:** Verfügbare Modelle und Stimmen bitte in der LiveKit-Dokumentation
-> prüfen, bevor sie geändert werden (Modellnamen ändern sich):
-> LLM <https://docs.livekit.io/agents/models/llm/> ·
-> STT <https://docs.livekit.io/agents/models/stt/> ·
-> TTS <https://docs.livekit.io/agents/models/tts/>.
-> Die Standardwerte entsprechen dem offiziellen LiveKit Node-Starter.
-> **Keine Stimme einer realen Person klonen.**
+```env
+DEEPGRAM_API_KEY=...      # STT (und optional die Stimme)
+OPENAI_API_KEY=...        # LLM/GPT (und Standard-Stimme)
+```
+
+**Deutsche Stimme wählen:**
+
+- **OpenAI-TTS (Standard, mehrsprachig):**
+  ```env
+  CLOSER_TTS_PROVIDER=openai
+  CLOSER_TTS_VOICE=onyx      # alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer
+  ```
+- **Deepgram-Stimme (z. B. deutsche Aura-2-„Julius"-Variante):** die **exakte
+  Modell-ID** aus der Deepgram-Doku eintragen:
+  ```env
+  CLOSER_TTS_PROVIDER=deepgram
+  CLOSER_DEEPGRAM_TTS_MODEL=<exakte-deepgram-modell-id>
+  ```
+
+Modelle optional überschreiben: `CLOSER_LLM_MODEL` (OpenAI-Modell, z. B.
+`gpt-4o-mini`), `CLOSER_STT_MODEL` (Deepgram, z. B. `nova-3`).
+
+### Pipeline „inference" (alles über LiveKit)
+
+`CLOSER_PIPELINE=inference` – nutzt LiveKit Inference (kostenpflichtig bei
+LiveKit), keine separaten Keys nötig. Modelle via `CLOSER_LLM_MODEL`,
+`CLOSER_STT_MODEL`, `CLOSER_TTS_MODEL`, `VOICE_ID`.
+
+> **Wichtig:** Modell-/Stimmen-Namen ändern sich – bitte in der jeweiligen Doku
+> prüfen: OpenAI (LLM/TTS), Deepgram (STT/TTS) bzw. LiveKit
+> (<https://docs.livekit.io/agents/models/>). **Keine Stimme einer realen
+> Person klonen.**
 
 Für eine Realtime-Pipeline statt STT→LLM→TTS siehe die LiveKit-Doku
 (`RealtimeModel`) – die erste Version nutzt bewusst die klassische Pipeline,

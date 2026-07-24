@@ -1,6 +1,7 @@
-import { Agent, inference } from '@livekit/agents';
+import { Agent } from '@livekit/agents';
 import { config } from './config.ts';
 import { formatKnowledgeForPrompt } from './knowledge/kickstartercash.ts';
+import { buildLLM } from './pipeline.ts';
 import { CLOSER_SYSTEM_PROMPT } from './prompts/closer-system-prompt.ts';
 import { LEAD_CAPTURE_ENABLED, createLeadCaptureTool } from './tools/lead-capture.ts';
 
@@ -26,8 +27,8 @@ export function createAgent() {
 
   return Agent.create({
     instructions,
-    // Das LLM ("Gehirn") des Agenten. Modell über config.ts / Env austauschbar.
-    llm: new inference.LLM({ model: config.llm.model }),
+    // Das LLM ("Gehirn") des Agenten. Anbieter/Modell über config.ts / Env.
+    llm: buildLLM(),
     ...(tools.length > 0 ? { tools } : {}),
   });
 }
