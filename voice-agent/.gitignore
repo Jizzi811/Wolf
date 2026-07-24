@@ -1,0 +1,13 @@
+# dependencies
+/node_modules
+.pnpm-store
+
+# env files
+.env*
+!.env.example
+
+# build/logs
+/dist
+*.log
+*.tsbuildinfo
+.DS_Store
