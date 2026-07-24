@@ -58,21 +58,30 @@ export function showMicError(error: Error) {
 }
 
 /**
- * Ordnet einen Verbindungsfehler beim Start einer verständlichen Meldung zu.
+ * Fragt die Token-Route, ob die LiveKit-Zugangsdaten serverseitig gesetzt sind.
+ * Es werden dabei keine Geheimnisse übertragen – nur ein Ja/Nein.
+ * Bei Unerreichbarkeit wird `true` angenommen, damit nicht fälschlich ein
+ * Konfigurationsfehler statt eines Verbindungsfehlers angezeigt wird.
  */
-export function showConnectionError(error: unknown) {
-  const message = error instanceof Error ? error.message.toLowerCase() : '';
-
-  if (
-    message.includes('livekit_url') ||
-    message.includes('api_key') ||
-    message.includes('api_secret') ||
-    message.includes('not defined') ||
-    message.includes('insecure')
-  ) {
-    showCloserError('config');
-    return;
+async function isTokenEndpointConfigured(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/token', { method: 'GET', cache: 'no-store' });
+    if (!res.ok) return true;
+    const data = (await res.json()) as { configured?: boolean };
+    return data.configured !== false;
+  } catch {
+    return true;
   }
+}
+
+/**
+ * Ordnet einen Verbindungsfehler beim Start einer verständlichen Meldung zu
+ * (Sektion 8). Prüft zunächst, ob die LiveKit-Konfiguration überhaupt gesetzt
+ * ist, und zeigt dann die passende Meldung: fehlende Konfiguration,
+ * nicht unterstützter Browser oder allgemeiner Verbindungsfehler.
+ */
+export async function showConnectionError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
 
   if (
     typeof navigator !== 'undefined' &&
@@ -82,5 +91,18 @@ export function showConnectionError(error: unknown) {
     return;
   }
 
-  showCloserError('connection');
+  if (
+    message.includes('config') ||
+    message.includes('livekit_url') ||
+    message.includes('api_key') ||
+    message.includes('api_secret') ||
+    message.includes('not defined')
+  ) {
+    showCloserError('config');
+    return;
+  }
+
+  // Präzise unterscheiden: fehlt die Konfiguration oder ist LiveKit unerreichbar?
+  const configured = await isTokenEndpointConfigured();
+  showCloserError(configured ? 'connection' : 'config');
 }

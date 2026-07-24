@@ -45,7 +45,7 @@ export function CloserExperience({ appConfig }: CloserExperienceProps) {
     try {
       await session.start();
     } catch (error) {
-      showConnectionError(error);
+      await showConnectionError(error);
     } finally {
       setStarting(false);
     }

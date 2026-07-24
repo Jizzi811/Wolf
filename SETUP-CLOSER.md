@@ -212,9 +212,11 @@ Rohfehler (siehe `components/closer/closer-error.tsx`).
 
 - **Frontend:** Als normale Next.js-App deploybar (z. B. Vercel). LiveKit-Secrets
   als serverseitige Environment-Variablen hinterlegen.
-  - ⚠️ Die enthaltene Token-Route `app/api/token/route.ts` ist ein
-    **Entwicklungs-Endpunkt** und wirft in Produktion absichtlich einen Fehler.
-    Vor dem Produktivbetrieb eine **authentifizierte** Token-Ausgabe ergänzen.
+  - Die Token-Route `app/api/token/route.ts` funktioniert auch in Produktion
+    (sie meldet fehlende Zugangsdaten klar). ⚠️ Sie gibt Tokens jedoch **ohne
+    eigene Authentifizierung** aus – vor einem öffentlichen Launch davor eine
+    Auth-Schicht (Login/Rate-Limit) ergänzen. Zum harten Sperren:
+    `LIVEKIT_TOKEN_ROUTE_DISABLED=true`.
 - **Voice-Agent:** Als eigenständiger, langlebiger Node-Prozess deployen
   (`pnpm start`), z. B. Container/Worker. Er läuft **getrennt** vom Frontend.
   LiveKit-Zugangsdaten als Environment-Variablen setzen.
@@ -238,4 +240,5 @@ Rohfehler (siehe `components/closer/closer-error.tsx`).
 - **Open-Graph-Bild** (`app/opengraph-image.tsx`) – schlichter, selbsttragender
   Platzhalter. Bei Bedarf durch ein echtes Motiv ersetzen.
 - **Favicon** (`app/favicon.ico`) – aktuell das Starter-Icon; bei Bedarf ersetzen.
-- **Token-Route** – Entwicklungs-Endpunkt, für Produktion abzusichern (Abschnitt 12).
+- **Token-Route** – funktionsfähig, aber ohne eigene Authentifizierung; vor
+  öffentlichem Launch absichern (Abschnitt 12).

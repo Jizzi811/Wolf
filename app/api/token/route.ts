@@ -9,39 +9,69 @@ type ConnectionDetails = {
   participantToken: string;
 };
 
-// NOTE: you are expected to define the following environment variables in `.env.local`:
+// Erwartete Environment-Variablen (serverseitig, in `.env.local`):
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
 
-// don't cache the results
+// Ergebnisse nicht cachen.
 export const revalidate = 0;
 
+/**
+ * ⚠️ SICHERHEITSHINWEIS
+ * Diese Route gibt LiveKit-Tokens ohne eigene Authentifizierung aus. Für einen
+ * öffentlichen Produktivbetrieb sollte davor eine Auth-Schicht ergänzt werden
+ * (Login/Rate-Limit), damit nicht beliebige Dritte Tokens anfordern können.
+ * Über `LIVEKIT_TOKEN_ROUTE_DISABLED=true` lässt sich die Route hart sperren.
+ */
+const ROUTE_DISABLED =
+  (process.env.LIVEKIT_TOKEN_ROUTE_DISABLED ?? 'false').toLowerCase() === 'true';
+
+function missingEnv(): string[] {
+  const missing: string[] = [];
+  if (!LIVEKIT_URL) missing.push('LIVEKIT_URL');
+  if (!API_KEY) missing.push('LIVEKIT_API_KEY');
+  if (!API_SECRET) missing.push('LIVEKIT_API_SECRET');
+  return missing;
+}
+
+/**
+ * Health-/Konfigurationsprüfung ohne Geheimnisse: meldet nur, ob die
+ * LiveKit-Zugangsdaten gesetzt sind. Das Frontend nutzt dies, um bei einem
+ * fehlgeschlagenen Verbindungsaufbau eine präzise Fehlermeldung zu zeigen.
+ */
+export async function GET() {
+  return NextResponse.json(
+    { configured: missingEnv().length === 0, disabled: ROUTE_DISABLED },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
+}
+
 export async function POST(req: Request) {
-  if (process.env.NODE_ENV !== 'development') {
-    throw new Error(
-      'THIS API ROUTE IS INSECURE. DO NOT USE THIS ROUTE IN PRODUCTION WITHOUT AN AUTHENTICATION LAYER.'
+  if (ROUTE_DISABLED) {
+    return NextResponse.json(
+      { error: 'disabled', message: 'Token route is disabled.' },
+      { status: 403 }
+    );
+  }
+
+  const missing = missingEnv();
+  if (missing.length > 0) {
+    // Klar als Konfigurationsproblem kennzeichnen (kein Stacktrace nach außen).
+    console.error(`Token route misconfigured. Missing env: ${missing.join(', ')}`);
+    return NextResponse.json(
+      { error: 'config', message: `Missing environment variables: ${missing.join(', ')}` },
+      { status: 503, headers: { 'Cache-Control': 'no-store' } }
     );
   }
 
   try {
-    if (LIVEKIT_URL === undefined) {
-      throw new Error('LIVEKIT_URL is not defined');
-    }
-    if (API_KEY === undefined) {
-      throw new Error('LIVEKIT_API_KEY is not defined');
-    }
-    if (API_SECRET === undefined) {
-      throw new Error('LIVEKIT_API_SECRET is not defined');
-    }
-
-    // Parse room config from request body.
-    const body = await req.json();
+    // Room-Konfiguration aus dem Request-Body übernehmen.
+    const body = await req.json().catch(() => ({}));
     const roomConfig = body?.room_config
       ? RoomConfiguration.fromJson(body.room_config, { ignoreUnknownFields: true })
       : new RoomConfiguration();
 
-    // Generate participant token
     const participantName = 'user';
     const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
     const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
@@ -52,22 +82,20 @@ export async function POST(req: Request) {
       roomConfig
     );
 
-    // Return connection details
     const data: ConnectionDetails = {
-      serverUrl: LIVEKIT_URL,
+      serverUrl: LIVEKIT_URL!,
       roomName,
       participantName,
       participantToken,
     };
-    const headers = new Headers({
-      'Cache-Control': 'no-store',
-    });
-    return NextResponse.json(data, { headers });
+    return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    if (error instanceof Error) {
-      console.error(error);
-      return new NextResponse(error.message, { status: 500 });
-    }
+    // Serverseitig loggen, nach außen nur eine neutrale Meldung.
+    console.error('Token route error:', error);
+    return NextResponse.json(
+      { error: 'connection', message: 'Failed to create token.' },
+      { status: 500, headers: { 'Cache-Control': 'no-store' } }
+    );
   }
 }
 
