@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'motion/react';
-import type { AgentState, TrackReference } from '@livekit/components-react';
-import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
 import type { CloserPhase } from '@/hooks/useCloserState';
 import { CLOSER_CONTENT } from '@/lib/closer-content';
 import { cn } from '@/lib/shadcn/utils';
@@ -13,10 +11,8 @@ interface CloserOrbProps {
   phase: CloserPhase;
   /** Audiopegel des Agenten (0–1) für die Sprech-Reaktion. */
   volume: number;
-  /** Agenten-Audiotrack für den integrierten Visualizer. */
-  audioTrack?: TrackReference;
   /** Ob eine Session verbunden ist (blendet den Visualizer ein). */
-  isConnected: boolean;
+  isConnected?: boolean;
   className?: string;
 }
 
@@ -91,20 +87,14 @@ const PHASE_CONFIG: Record<
   },
 };
 
-const PHASE_TO_AGENT_STATE: Record<CloserPhase, AgentState> = {
-  idle: 'listening',
-  connecting: 'connecting',
-  listening: 'listening',
-  thinking: 'thinking',
-  speaking: 'speaking',
-};
+/** Simple bar heights based on position to create a wave shape. */
+const BAR_FACTORS = [0.4, 0.7, 1.0, 0.7, 0.4] as const;
 
-export function CloserOrb({ phase, volume, audioTrack, isConnected, className }: CloserOrbProps) {
+export function CloserOrb({ phase, volume, isConnected = false, className }: CloserOrbProps) {
   const [imageOk, setImageOk] = useState(true);
   const config = PHASE_CONFIG[phase];
   const clampedVolume = Math.min(Math.max(volume, 0), 1);
 
-  // Audioreaktive Werte: nur beim Sprechen deutlich, sonst ruhiger Grundzustand.
   const isSpeaking = phase === 'speaking';
   const orbScale = isSpeaking ? 1 + clampedVolume * 0.05 : 1;
   const glowOpacity = isSpeaking ? config.baseGlow + clampedVolume * 0.45 : config.baseGlow;
@@ -118,7 +108,7 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
       )}
       style={config.vars}
     >
-      {/* Weicher radialer Goldschein hinter dem Orb (reagiert auf Audio) */}
+      {/* Weicher radialer Goldschein hinter dem Orb */}
       <motion.div
         aria-hidden="true"
         className="absolute inset-0 rounded-full blur-2xl"
@@ -141,7 +131,7 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
         className="closer-anim-halo-pulse border-gold/15 absolute inset-[-4%] rounded-full border"
       />
 
-      {/* Rotierender Lichtbogen (Verbindungsaufbau & dezent bei Aktivität) */}
+      {/* Rotierender Lichtbogen */}
       <div aria-hidden="true" className="closer-anim-halo-rotate absolute inset-[-2%]">
         <div
           className="absolute inset-0 rounded-full"
@@ -223,7 +213,6 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
             onError={() => setImageOk(false)}
           />
         ) : (
-          // CSS-Fallback, falls /johann-orb.png (noch) nicht vorhanden ist.
           <OrbFallback />
         )}
       </motion.div>
@@ -249,17 +238,25 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
         />
       </div>
 
-      {/* Integrierter LiveKit-Audio-Visualizer während der Session (Sektion 5) */}
+      {/* Lautstärke-Visualizer (ersetzt LiveKit AudioVisualizerBar) */}
       {isConnected && (
-        <div className="pointer-events-none absolute bottom-[-6%] left-1/2 z-20 -translate-x-1/2">
-          <AgentAudioVisualizerBar
-            size="sm"
-            barCount={5}
-            state={PHASE_TO_AGENT_STATE[phase]}
-            color="#F3D58A"
-            audioTrack={audioTrack}
-            className="text-gold-light opacity-80"
-          />
+        <div className="pointer-events-none absolute bottom-[-6%] left-1/2 z-20 flex -translate-x-1/2 items-end gap-[3px]">
+          {BAR_FACTORS.map((factor, i) => (
+            <motion.div
+              key={i}
+              aria-hidden="true"
+              className="bg-gold-light w-[3px] rounded-full opacity-80"
+              animate={{
+                height:
+                  phase === 'speaking'
+                    ? `${Math.max(4, clampedVolume * 22 * factor)}px`
+                    : phase === 'listening'
+                      ? '4px'
+                      : '2px',
+              }}
+              transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -267,8 +264,7 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
 }
 
 /**
- * Rein CSS-basierter Ersatz-Orb, damit die Bühne auch ohne Bilddatei
- * hochwertig aussieht (Sektion 4).
+ * Rein CSS-basierter Ersatz-Orb.
  */
 function OrbFallback() {
   return (
@@ -282,12 +278,10 @@ function OrbFallback() {
             '0 20px 60px rgba(0,0,0,0.6), inset -18px -22px 50px rgba(58,42,12,0.65), inset 14px 16px 40px rgba(255,233,176,0.55)',
         }}
       />
-      {/* Angedeutete Sonnenbrille */}
       <div className="absolute top-[40%] left-1/2 flex -translate-x-1/2 gap-2">
         <div className="h-5 w-8 rounded-md bg-black/85 shadow-inner md:h-8 md:w-14" />
         <div className="h-5 w-8 rounded-md bg-black/85 shadow-inner md:h-8 md:w-14" />
       </div>
-      {/* Glanzlicht */}
       <div className="absolute top-[16%] left-[24%] h-[16%] w-[16%] rounded-full bg-white/50 blur-md" />
     </div>
   );
