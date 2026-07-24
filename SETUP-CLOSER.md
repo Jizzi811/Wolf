@@ -50,6 +50,27 @@ CLOSER kann die „Sprech-Maschine" auf zwei Arten betreiben – umschaltbar üb
 > Token aus `/api/dg-token`. Schlüssel niemals in Screenshots, Chats oder
 > `.env`-Dateien in fremde Tools kopieren.
 
+### Gehirn (LLM): Deepgram-verwaltet oder Groq
+
+Standardmäßig verwaltet Deepgram das LLM (OpenAI/GPT) und rechnet es über dein
+Deepgram-Guthaben ab – kein weiterer Key nötig. Optional kannst du **Groq**
+(schnell, günstig, großzügiges Freikontingent) als Gehirn nutzen:
+
+```env
+CLOSER_DG_THINK_PROVIDER=groq
+CLOSER_DG_THINK_MODEL=llama-3.3-70b-versatile   # aktuelle Groq-Modell-ID prüfen
+GROQ_API_KEY=<dein_groq_key>                     # bleibt serverseitig!
+GROQ_PROXY_SECRET=<frei-wählbares-geheimnis>     # optionaler Schutz des Proxys
+```
+
+Groq läuft über den Server-Proxy `/api/llm-proxy` – der Groq-Key verlässt den
+Server **nie**. Deepgrams Server rufen den Proxy öffentlich auf; er hängt den
+Key an und leitet an Groq weiter. Modell-IDs ändern sich – die aktuelle Liste
+steht in der Groq-Konsole.
+
+> Hinweis: `GROQ_PROXY_SECRET` ist ein leichter Schutz (der Wert ist im Browser
+> sichtbar). Der eigentliche Schutz ist, dass der Groq-Key serverseitig bleibt.
+
 ---
 
 ## 1. Voraussetzungen

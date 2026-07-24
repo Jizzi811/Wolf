@@ -10,6 +10,10 @@ export interface DeepgramAgentConfig {
   thinkProvider: string;
   thinkModel: string;
   speakModel: string;
+  /** Optionaler eigener LLM-Endpunkt (z. B. Groq-Proxy). Leer = Deepgram-verwaltet. */
+  thinkEndpointUrl?: string;
+  /** Optionale Header für den eigenen LLM-Endpunkt (z. B. Proxy-Schutz). */
+  thinkEndpointHeaders?: Record<string, string>;
 }
 
 /** Audio-Abtastrate für Ein- und Ausgabe (linear16). */
@@ -27,6 +31,19 @@ export const CLOSER_GREETING =
  * im Browser gesetzt (Sektion 21). Die Stimme ist eine deutsche Deepgram-Stimme.
  */
 export function buildAgentSettings(config: DeepgramAgentConfig, prompt: string): AgentLiveSchema {
+  const think: NonNullable<AgentLiveSchema['agent']['think']> = {
+    provider: { type: config.thinkProvider, model: config.thinkModel },
+    prompt,
+  };
+
+  // Eigener LLM-Endpunkt (z. B. Groq via Server-Proxy) – nur wenn gesetzt.
+  if (config.thinkEndpointUrl) {
+    think.endpoint = {
+      url: config.thinkEndpointUrl,
+      ...(config.thinkEndpointHeaders ? { headers: config.thinkEndpointHeaders } : {}),
+    };
+  }
+
   return {
     audio: {
       input: { encoding: 'linear16', sample_rate: DG_SAMPLE_RATE },
@@ -35,10 +52,7 @@ export function buildAgentSettings(config: DeepgramAgentConfig, prompt: string):
     agent: {
       language: config.language,
       listen: { provider: { type: 'deepgram', model: config.listenModel } },
-      think: {
-        provider: { type: config.thinkProvider, model: config.thinkModel },
-        prompt,
-      },
+      think,
       speak: { provider: { type: 'deepgram', model: config.speakModel } },
       greeting: CLOSER_GREETING,
     },
