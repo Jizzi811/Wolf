@@ -1,178 +1,288 @@
-J3VzZSBjbGllbnQnOwoKaW1wb3J0IHsgdXNlQ2FsbGJhY2ssIHVzZUVmZmVj
-dCwgdXNlUmVmLCB1c2VTdGF0ZSB9IGZyb20gJ3JlYWN0JzsKaW1wb3J0IHR5
-cGUgeyBDbG9zZXJQaGFzZSB9IGZyb20gJ0AvaG9va3MvdXNlQ2xvc2VyU3Rh
-dGUnOwoKZXhwb3J0IGludGVyZmFjZSBNZXNzYWdlIHsKICBpZDogc3RyaW5n
-OwogIHJvbGU6ICd1c2VyJyB8ICdhZ2VudCc7CiAgY29udGVudDogc3RyaW5n
-Owp9CgpleHBvcnQgaW50ZXJmYWNlIFNpbXBsZVZvaWNlQWdlbnRTdGF0ZSB7
-CiAgcGhhc2U6IENsb3NlclBoYXNlOwogIGlzQ29ubmVjdGVkOiBib29sZWFu
-OwogIHZvbHVtZTogbnVtYmVyOwogIHRyYW5zY3JpcHQ6IHN0cmluZzsKICBt
-ZXNzYWdlczogTWVzc2FnZVtdOwogIG1pY0VuYWJsZWQ6IGJvb2xlYW47CiAg
-c3RhcnRMaXN0ZW5pbmc6ICgpID0+IFByb21pc2U8dm9pZD47CiAgc3RvcFNl
-c3Npb246ICgpID0+IHZvaWQ7CiAgdG9nZ2xlTWljOiAoKSA9PiB2b2lkOwp9
-CgpleHBvcnQgZnVuY3Rpb24gdXNlU2ltcGxlVm9pY2VBZ2VudCgpOiBTaW1w
-bGVWb2ljZUFnZW50U3RhdGUgewogIGNvbnN0IFtwaGFzZSwgc2V0UGhhc2Vd
-ID0gdXNlU3RhdGU8Q2xvc2VyUGhhc2U+KCdpZGxlJyk7CiAgY29uc3QgW2lz
-Q29ubmVjdGVkLCBzZXRJc0Nvbm5lY3RlZF0gPSB1c2VTdGF0ZShmYWxzZSk7
-CiAgY29uc3QgW3ZvbHVtZSwgc2V0Vm9sdW1lXSA9IHVzZVN0YXRlKDApOwog
-IGNvbnN0IFt0cmFuc2NyaXB0LCBzZXRUcmFuc2NyaXB0XSA9IHVzZVN0YXRl
-KCcnKTsKICBjb25zdCBbbWVzc2FnZXMsIHNldE1lc3NhZ2VzXSA9IHVzZVN0
-YXRlPE1lc3NhZ2VbXT4oW10pOwogIGNvbnN0IFttaWNFbmFibGVkLCBzZXRN
-aWNFbmFibGVkXSA9IHVzZVN0YXRlKHRydWUpOwoKICBjb25zdCByZWNvZ25p
-dGlvblJlZiA9IHVzZVJlZjxTcGVlY2hSZWNvZ25pdGlvbiB8IG51bGw+KG51
-bGwpOwogIGNvbnN0IHN0cmVhbVJlZiA9IHVzZVJlZjxNZWRpYVN0cmVhbSB8
-IG51bGw+KG51bGwpOwogIGNvbnN0IGFuaW1GcmFtZVJlZiA9IHVzZVJlZjxu
-dW1iZXI+KDApOwogIGNvbnN0IGlzQWN0aXZlUmVmID0gdXNlUmVmKGZhbHNl
-KTsKICBjb25zdCBwaGFzZVJlZiA9IHVzZVJlZjxDbG9zZXJQaGFzZT4oJ2lk
-bGUnKTsKICBjb25zdCBoaXN0b3J5UmVmID0gdXNlUmVmPHsgcm9sZTogJ3Vz
-ZXInIHwgJ2Fzc2lzdGFudCc7IGNvbnRlbnQ6IHN0cmluZyB9W10+KFtdKTsK
-ICBjb25zdCB0cmFuc2NyaXB0UmVmID0gdXNlUmVmKCcnKTsKICBjb25zdCBt
-c2dJZFJlZiA9IHVzZVJlZigwKTsKCiAgY29uc3QgdXBkYXRlUGhhc2UgPSB1
-c2VDYWxsYmFjaygoYTogQ2xvc2VyUGhhc2UpID0+IHsKICAgIHBoYXNlUmVm
-LmN1cnJlbnQgPSBhOwogICAgc2V0UGhhc2UoYSk7CiAgfSwgW10pOwoKICBj
-b25zdCBwb2xsVm9sdW1lID0gdXNlQ2FsbGJhY2soCiAgICAoYW5hbHlzZXI6
-IEFuYWx5c2VyTm9kZSwgY3R4OiBBdWRpb0NvbnRleHQpOiAoKCkgPT4gdm9p
-ZCkgPT4gewogICAgICBjb25zdCBkYXRhID0gbmV3IFVpbnQ4QXJyYXkoYW5h
-bHlzZXIuZmZ0U2l6ZSk7CiAgICAgIGxldCByYWZJZCA9IDA7CiAgICAgIGNv
-bnN0IHRpY2sgPSAoKSA9PiB7CiAgICAgICAgYW5hbHlzZXIuZ2V0Qnl0ZVRp
-bWVEb21haW5EYXRhKGRhdGEpOwogICAgICAgIGxldCBzdW0gPSAwOwogICAg
-ICAgIGZvciAobGV0IGkgPSAwOyBpIDwgZGF0YS5sZW5ndGg7IGkrKykgewog
-ICAgICAgICAgY29uc3QgdiA9IChkYXRhW2ldIC0gMTI4KSAvIDEyODsKICAg
-ICAgICAgIHN1bSArPSB2ICogdjsKICAgICAgICB9CiAgICAgICAgc2V0Vm9s
-dW1lKE1hdGgubWluKE1hdGguc3FydChzdW0gLyBkYXRhLmxlbmd0aCkgKiA1
-LCAxKSk7CiAgICAgICAgcmFmSWQgPSByZXF1ZXN0QW5pbWF0aW9uRnJhbWUo
-dGljayk7CiAgICAgICAgYW5pbUZyYW1lUmVmLmN1cnJlbnQgPSByYWZJZDsK
-ICAgICAgfTsKICAgICAgcmFmSWQgPSByZXF1ZXN0QW5pbWF0aW9uRnJhbWUo
-dGljayk7CiAgICAgIGFuaW1GcmFtZVJlZi5jdXJyZW50ID0gcmFmSWQ7CiAg
-ICAgIHJldHVybiAoKSA9PiB7CiAgICAgICAgY2FuY2VsQW5pbWF0aW9uRnJh
-bWUocmFmSWQpOwogICAgICAgIGN0eC5jbG9zZSgpLmNhdGNoKCgpID0+IHt9
-KTsKICAgICAgfTsKICAgIH0sCiAgICBbXQogICk7CgogIGNvbnN0IHBsYXlB
-dWRpbyA9IHVzZUNhbGxiYWNrKAogICAgYXN5bmMgKGJ1ZmZlcjogQXJyYXlC
-dWZmZXIpOiBQcm9taXNlPHZvaWQ+ID0+IHsKICAgICAgY2FuY2VsQW5pbWF0
-aW9uRnJhbWUoYW5pbUZyYW1lUmVmLmN1cnJlbnQpOwogICAgICByZXR1cm4g
-bmV3IFByb21pc2U8dm9pZD4oKHJlc29sdmUsIHJlamVjdCkgPT4gewogICAg
-ICAgIGNvbnN0IGN0eCA9IG5ldyBBdWRpb0NvbnRleHQoKTsKICAgICAgICBj
-b25zdCBhbmFseXNlciA9IGN0eC5jcmVhdGVBbmFseXNlcigpOwogICAgICAg
-IGFuYWx5c2VyLmZmdFNpemUgPSAyNTY7CiAgICAgICAgYW5hbHlzZXIuY29u
-bmVjdChjdHguZGVzdGluYXRpb24pOwoKICAgICAgICBjdHgKICAgICAgICAg
-IC5kZWNvZGVBdWRpb0RhdGEoYnVmZmVyKQogICAgICAgICAgLnRoZW4oKGRl
-Y29kZWQpID0+IHsKICAgICAgICAgICAgY29uc3Qgc3JjID0gY3R4LmNyZWF0
-ZUJ1ZmZlclNvdXJjZSgpOwogICAgICAgICAgICBzcmMuYnVmZmVyID0gZGVj
-b2RlZDsKICAgICAgICAgICAgc3JjLmNvbm5lY3QoYW5hbHlzZXIpOwogICAg
-ICAgICAgICBjb25zdCBzdG9wUG9sbGluZyA9IHBvbGxWb2x1bWUoYW5hbHlz
-ZXIsIGN0eCk7CiAgICAgICAgICAgIHNyYy5zdGFydCgpOwogICAgICAgICAg
-ICBzcmMub25lbmRlZCA9ICgpID0+IHsKICAgICAgICAgICAgICBzdG9wUG9s
-bGluZygpOwogICAgICAgICAgICAgIHNldFZvbHVtZSgwKTsKICAgICAgICAg
-ICAgICByZXNvbHZlKCk7CiAgICAgICAgICAgIH07CiAgICAgICAgICB9KQog
-ICAgICAgICAgLmNhdGNoKHJlamVjdCk7CiAgICAgIH0pOwogICAgfSwKICAg
-IFtwb2xsVm9sdW1lXQogICk7CgogIGNvbnN0IHBsYXlBdWRpb1JlZiA9IHVz
-ZVJlZihwbGF5QXVkaW8pOwogIHBsYXlBdWRpb1JlZi5jdXJyZW50ID0gcGxh
-eUF1ZGlvOwoKICBjb25zdCBhc2sgPSB1c2VDYWxsYmFjaygKICAgIGFzeW5j
-ICh1c2VyVGV4dDogc3RyaW5nKTogUHJvbWlzZTx2b2lkPiA9PiB7CiAgICAg
-IGNvbnN0IHVpZCA9IFN0cmluZygrK21zZ0lkUmVmLmN1cnJlbnQpOwogICAg
-ICBzZXRNZXNzYWdlcygocHJldikgPT4gWy4uLnByZXYsIHsgaWQ6IHVpZCwg
-cm9sZTogJ3VzZXInLCBjb250ZW50OiB1c2VyVGV4dCB9XSk7CiAgICAgIGhp
-c3RvcnlSZWYuY3VycmVudCA9IFsuLi5oaXN0b3J5UmVmLmN1cnJlbnQsIHsg
-cm9sZTogJ3VzZXInLCBjb250ZW50OiB1c2VyVGV4dCB9XTsKCiAgICAgIHVw
-ZGF0ZVBoYXNlKCd0aGlua2luZycpOwoKICAgICAgdHJ5IHsKICAgICAgICBj
-b25zdCByZXMgPSBhd2FpdCBmZXRjaCgnL2FwaS9qb3JkYW4nLCB7CiAgICAg
-ICAgICBtZXRob2Q6ICdQT1NUJywKICAgICAgICAgIGhlYWRlcnM6IHsgJ0Nv
-bnRlbnQtVHlwZSc6ICdhcHBsaWNhdGlvbi9qc29uJyB9LAogICAgICAgICAg
-Ym9keTogSlNPTi5zdHJpbmdpZnkoeyB0ZXh0OiB1c2VyVGV4dCwgaGlzdG9y
-eTogaGlzdG9yeVJlZi5jdXJyZW50LnNsaWNlKC0xMikgfSksCiAgICAgICAg
-fSk7CgogICAgICAgIGlmICghcmVzLm9rKSB7CiAgICAgICAgICBjb25zdCBlcnIg
-PSBhd2FpdCByZXMudGV4dCgpOwogICAgICAgICAgdGhyb3cgbmV3IEVycm9y
-KGBBUEkgZXJyb3IgJHtyZXMuc3RhdHVzfTogJHtlcnJ9YCk7CiAgICAgICAg
-fQoKICAgICAgICBjb25zdCBhZ2VudFRleHRSYXcgPSByZXMuaGVhZGVycy5n
-ZXQoJ1gtQWdlbnQtVGV4dCcpID8/ICcnOwogICAgICAgIGNvbnN0IGFnZW50
-VGV4dCA9IGFnZW50VGV4dFJhdyA/IGRlY29kZVVSSUNvbXBvbmVudChhZ2Vu
-dFRleHRSYXcpIDogJyc7CiAgICAgICAgaWYgKGFnZW50VGV4dCkgewogICAg
-ICAgICAgY29uc3QgYWlkID0gU3RyaW5nKCsrbXNnSWRSZWYuY3VycmVudCk7
-CiAgICAgICAgICBzZXRNZXNzYWdlcygocHJldikgPT4gWwogICAgICAgICAg
-ICAuLi5wcmV2LAogICAgICAgICAgICB7IGlkOiBhaWQsIHJvbGU6ICdhZ2Vu
-dCcsIGNvbnRlbnQ6IGFnZW50VGV4dCB9LAogICAgICAgICAgXSk7CiAgICAg
-ICAgICBoaXN0b3J5UmVmLmN1cnJlbnQgPSBbCiAgICAgICAgICAgIC4uLmhp
-c3RvcnlSZWYuY3VycmVudCwKICAgICAgICAgICAgeyByb2xlOiAnYXNzaXN0
-YW50JywgY29udGVudDogYWdlbnRUZXh0IH0sCiAgICAgICAgICBdOwogICAg
-ICAgIH0KCiAgICAgICAgY29uc3QgYXVkaW9CdWYgPSBhd2FpdCByZXMuYXJy
-YXlCdWZmZXIoKTsKICAgICAgICB1cGRhdGVQaGFzZSgnc3BlYWtpbmcnKTsK
-ICAgICAgICBhd2FpdCBwbGF5QXVkaW9SZWYuY3VycmVudChhdWRpb0J1Zik7
-CiAgICAgIH0gY2F0Y2ggKGVycikgewogICAgICAgIGNvbnNvbGUuZXJyb3Io
-J1tKb3JkYW5dIGFzayBlcnJvcjonLCBlcnIpOwogICAgICB9CgogICAgICBp
-ZiAoaXNBY3RpdmVSZWYuY3VycmVudCkgdXBkYXRlUGhhc2UoJ2xpc3Rlbmlu
-ZycpOwogICAgfSwKICAgIFt1cGRhdGVQaGFzZV0KICApOwoKICBjb25zdCBh
-c2tSZWYgPSB1c2VSZWYoYXNrKTsKICBhc2tSZWYuY3VycmVudCA9IGFzazsK
-CiAgY29uc3Qgc3RhcnRDeWNsZSA9IHVzZUNhbGxiYWNrKCgpID0+IHsKICAg
-IGNvbnN0IHJlY29nbml0aW9uID0gcmVjb2duaXRpb25SZWYuY3VycmVudDsK
-ICAgIGlmICghcmVjb2duaXRpb24gfHwgIWlzQWN0aXZlUmVmLmN1cnJlbnQp
-IHJldHVybjsKCiAgICB0cmFuc2NyaXB0UmVmLmN1cnJlbnQgPSAnJzsKICAg
-IHNldFRyYW5zY3JpcHQoJycpOwoKICAgIHJlY29nbml0aW9uLm9ucmVzdWx0
-ID0gKGV2ZW50OiBTcGVlY2hSZWNvZ25pdGlvbkV2ZW50KSA9PiB7CiAgICAg
-IGxldCB0ZXh0ID0gJyc7CiAgICAgIGZvciAobGV0IGkgPSAwOyBpIDwgZXZl
-bnQucmVzdWx0cy5sZW5ndGg7IGkrKykgewogICAgICAgIHRleHQgKz0gZXZl
-bnQucmVzdWx0c1tpXVswXS50cmFuc2NyaXB0OwogICAgICB9CiAgICAgIHRy
-YW5zY3JpcHRSZWYuY3VycmVudCA9IHRleHQ7CiAgICAgIHNldFRyYW5zY3Jp
-cHQodGV4dCk7CiAgICB9OwoKICAgIHJlY29nbml0aW9uLm9uZW5kID0gYXN5
-bmMgKCkgPT4gewogICAgICBjb25zdCB0ZXh0ID0gdHJhbnNjcmlwdFJlZi5j
-dXJyZW50LnRyaW0oKTsKICAgICAgdHJhbnNjcmlwdFJlZi5jdXJyZW50ID0g
-Jyc7CiAgICAgIHNldFRyYW5zY3JpcHQoJycpOwoKICAgICAgaWYgKCFpc0Fj
-dGl2ZVJlZi5jdXJyZW50KSByZXR1cm47CgogICAgICBpZiAodGV4dCkgewog
-ICAgICAgIGF3YWl0IGFza1JlZi5jdXJyZW50KHRleHQpOwogICAgICB9Cgog
-ICAgICAgaWYgKGlzQWN0aXZlUmVmLmN1cnJlbnQpIHsKICAgICAgICB0cnkg
-ewogICAgICAgICAgcmVjb2duaXRpb24uc3RhcnQoKTsKICAgICAgICB9IGNh
-dGNoIHsKICAgICAgICAgIC8qIGFscmVhZHkgc3RhcnRlZCAqLwogICAgICAg
-IH0KICAgICAgfQogICAgfTsKCiAgICB0cnkgewogICAgICByZWNvZ25pdGlv
-bi5zdGFydCgpOwogICAgICB1cGRhdGVQaGFzZSgnbGlzdGVuaW5nJyk7CiAg
-ICB9IGNhdGNoIHsKICAgICAgLyogaWdub3JlICovCiAgICB9CiAgfSwgW3Vw
-ZGF0ZVBoYXNlXSk7CgogIGNvbnN0IHN0YXJ0Q3ljbGVSZWYgPSB1c2VSZWYo
-c3RhcnRDeWNsZSk7CiAgc3RhcnRDeWNsZVJlZi5jdXJyZW50ID0gc3RhcnRD
-eWNsZTsKCiAgY29uc3Qgc3RvcFNlc3Npb24gPSB1c2VDYWxsYmFjaygoKSA9
-PiB7CiAgICBpc0FjdGl2ZVJlZi5jdXJyZW50ID0gZmFsc2U7CiAgICB0cnkg
-ewogICAgICByZWNvZ25pdGlvblJlZi5jdXJyZW50Py5zdG9wKCk7CiAgICB9
-IGNhdGNoIHsKICAgICAgLyogaWdub3JlICovCiAgICB9CiAgICBzdHJlYW1S
-ZWYuY3VycmVudD8uZ2V0VHJhY2tzKCkuZm9yRWFjaCgodCkgPT4gdC5zdG9w
-KCkpOwogICAgY2FuY2VsQW5pbWF0aW9uRnJhbWUoYW5pbUZyYW1lUmVmLmN1
-cnJlbnQpOwogICAgdXBkYXRlUGhhc2UoJ2lkbGUnKTsKICAgIHNldElzQ29u
-bmVjdGVkKGZhbHNlKTsKICAgIHNldFZvbHVtZSgwKTsKICAgIHNldFRyYW5z
-Y3JpcHQoJycpOwogICAgdHJhbnNjcmlwdFJlZi5jdXJyZW50ID0gJyc7CiAg
-fSwgW3VwZGF0ZVBoYXNlXSk7CgogIGNvbnN0IHRvZ2dsZU1pYyA9IHVzZUNh
-bGxiYWNrKCgpID0+IHsKICAgIHNldE1pY0VuYWJsZWQoKHByZXYpID0+IHsK
-ICAgICAgY29uc3QgbmV4dCA9ICFwcmV2OwogICAgICBzdHJlYW1SZWYuY3Vy
-cmVudD8uZ2V0QXVkaW9UcmFja3MoKS5mb3JFYWNoKCh0KSA9PiB7CiAgICAg
-ICAgdC5lbmFibGVkID0gbmV4dDsKICAgICAgfSk7CiAgICAgIHJldHVybiBu
-ZXh0OwogICAgfSk7CiAgfSwgW10pOwoKICBjb25zdCBzdGFydExpc3Rlbmlu
-ZyA9IHVzZUNhbGxiYWNrKGFzeW5jICgpID0+IHsKICAgIGlmIChpc0FjdGl2
-ZVJlZi5jdXJyZW50KSByZXR1cm47CgogICAgY29uc3QgU3BlZWNoUmVjb2du
-aXRpb25DdG9yID0KICAgICAgdHlwZW9mIHdpbmRvdyAhPT0gJ3VuZGVmaW5l
-ZCcKICAgICAgICA/ICh3aW5kb3cuU3BlZWNoUmVjb2duaXRpb24gPz8gd2lu
-ZG93LndlYmtpdFNwZWVjaFJlY29nbml0aW9uID8/IG51bGwpCiAgICAgICAg
-OiBudWxsOwoKICAgIGlmICghU3BlZWNoUmVjb2duaXRpb25DdG9yKSB7CiAg
-ICAgIGFsZXJ0KCdLZWluIFdlYiBTcGVlY2ggQVBJIHZlcmbDvGdiYXIuIEJp
-dHRlIENocm9tZSBvZGVyIEVkZ2UgdmVyd2VuZGVuLicpOwogICAgICByZXR1
-cm47CiAgICB9CgogICAgdHJ5IHsKICAgICAgc3RyZWFtUmVmLmN1cnJlbnQg
-PSBhd2FpdCBuYXZpZ2F0b3IubWVkaWFEZXZpY2VzLmdldFVzZXJNZWRpYSh7
-IGF1ZGlvOiB0cnVlIH0pOwogICAgfSBjYXRjaCB7CiAgICAgIGFsZXJ0KCdN
-aWtyb2Zvbi1adWdyaWZmIHd1cmRlIHZlcndlaWdlcnQuIEJpdHRlIEJlcmVj
-aHRpZ3VuZyBlcnRlaWxlbi4nKTsKICAgICAgcmV0dXJuOwogICAgfQoKICAg
-IGNvbnN0IHJlY29nbml0aW9uID0gbmV3IFNwZWVjaFJlY29nbml0aW9uQ3Rv
-cigpOwogICAgcmVjb2duaXRpb24ubGFuZyA9ICdkZS1ERSc7CiAgICByZWNv
-Z25pdGlvbi5jb250aW51b3VzID0gZmFsc2U7CiAgICByZWNvZ25pdGlvbi5p
-bnRlcmltUmVzdWx0cyA9IHRydWU7CiAgICByZWNvZ25pdGlvbi5vbmVycm9y
-ID0gKGU6IFNwZWVjaFJlY29nbml0aW9uRXJyb3JFdmVudCkgPT4gewogICAg
-ICBpZiAoZS5lcnJvciA9PT0gJ25vLXNwZWVjaCcpIHJldHVybjsKICAgICAg
-Y29uc29sZS5lcnJvcignW0pvcmRhbl0gU1RUIGVycm9yOicsIGUuZXJyb3Ip
-OwogICAgfTsKICAgIHJlY29nbml0aW9uUmVmLmN1cnJlbnQgPSByZWNvZ25p
-dGlvbjsKCiAgICBpc0FjdGl2ZVJlZi5jdXJyZW50ID0gdHJ1ZTsKICAgIHNl
-dElzQ29ubmVjdGVkKHRydWUpOwogICAgdXBkYXRlUGhhc2UoJ2Nvbm5lY3Rp
-bmcnKTsKCiAgICBzZXRUaW1lb3V0KCgpID0+IHsKICAgICAgaWYgKGlzQWN0
-aXZlUmVmLmN1cnJlbnQpIHN0YXJ0Q3ljbGVSZWYuY3VycmVudCgpOwogICAg
-fSwgNDAwKTsKICB9LCBbdXBkYXRlUGhhc2VdKTsKCiAgdXNlRWZmZWN0KCgp
-ID0+IHsKICAgIHJldHVybiAoKSA9PiB7CiAgICAgIGlzQWN0aXZlUmVmLmN1
-cnJlbnQgPSBmYWxzZTsKICAgICAgdHJ5IHsKICAgICAgICByZWNvZ25pdGlv
-blJlZi5jdXJyZW50Py5zdG9wKCk7CiAgICAgIH0gY2F0Y2ggewogICAgICAg
-IC8qIGlnbm9yZSAqLwogICAgICB9CiAgICAgIHN0cmVhbVJlZi5jdXJyZW50
-Py5nZXRUcmFja3MoKS5mb3JFYWNoKCh0KSA9PiB0LnN0b3AoKSk7CiAgICAg
-IGNhbmNlbEFuaW1hdGlvbkZyYW1lKGFuaW1GcmFtZVJlZi5jdXJyZW50KTsK
-ICAgIH07CiAgfSwgW10pOwoKICByZXR1cm4gewogICAgcGhhc2UsCiAgICBp
-c0Nvbm5lY3RlZCwKICAgIHZvbHVtZSwKICAgIHRyYW5zY3JpcHQsCiAgICBt
-ZXNzYWdlcywKICAgIG1pY0VuYWJsZWQsCiAgICBzdGFydExpc3RlbmluZywK
-ICAgIHN0b3BTZXNzaW9uLAogICAgdG9nZ2xlTWljLAogIH07Cn0K
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { CloserPhase } from '@/hooks/useCloserState';
+
+export interface Message {
+  id: string;
+  role: 'user' | 'agent';
+  content: string;
+}
+
+export interface SimpleVoiceAgentState {
+  phase: CloserPhase;
+  isConnected: boolean;
+  volume: number;
+  transcript: string;
+  messages: Message[];
+  micEnabled: boolean;
+  startListening: () => Promise<void>;
+  stopSession: () => void;
+  toggleMic: () => void;
+}
+
+export function useSimpleVoiceAgent(): SimpleVoiceAgentState {
+  const [phase, setPhase] = useState<CloserPhase>('idle');
+  const [isConnected, setIsConnected] = useState(false);
+  const [volume, setVolume] = useState(0);
+  const [transcript, setTranscript] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [micEnabled, setMicEnabled] = useState(true);
+
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number>(0);
+  const isActiveRef = useRef(false);
+  const phaseRef = useRef<CloserPhase>('idle');
+  const historyRef = useRef<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const transcriptRef = useRef('');
+  const msgIdRef = useRef(0);
+
+  const updatePhase = useCallback((a: CloserPhase) => {
+    phaseRef.current = a;
+    setPhase(a);
+  }, []);
+
+  const pollVolume = useCallback(
+    (analyser: AnalyserNode, ctx: AudioContext): (() => void) => {
+      const data = new Uint8Array(analyser.fftSize);
+      let rafId = 0;
+      const tick = () => {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) {
+          const v = (data[i] - 128) / 128;
+          sum += v * v;
+        }
+        setVolume(Math.min(Math.sqrt(sum / data.length) * 5, 1));
+        rafId = requestAnimationFrame(tick);
+        animFrameRef.current = rafId;
+      };
+      rafId = requestAnimationFrame(tick);
+      animFrameRef.current = rafId;
+      return () => {
+        cancelAnimationFrame(rafId);
+        ctx.close().catch(() => {});
+      };
+    },
+    []
+  );
+
+  const playAudio = useCallback(
+    async (buffer: ArrayBuffer): Promise<void> => {
+      cancelAnimationFrame(animFrameRef.current);
+      return new Promise<void>((resolve, reject) => {
+        const ctx = new AudioContext();
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.connect(ctx.destination);
+
+        ctx
+          .decodeAudioData(buffer)
+          .then((decoded) => {
+            const src = ctx.createBufferSource();
+            src.buffer = decoded;
+            src.connect(analyser);
+            const stopPolling = pollVolume(analyser, ctx);
+            src.start();
+            src.onended = () => {
+              stopPolling();
+              setVolume(0);
+              resolve();
+            };
+          })
+          .catch(reject);
+      });
+    },
+    [pollVolume]
+  );
+
+  const playAudioRef = useRef(playAudio);
+  playAudioRef.current = playAudio;
+
+  const ask = useCallback(
+    async (userText: string): Promise<void> => {
+      const uid = String(++msgIdRef.current);
+      setMessages((prev) => [...prev, { id: uid, role: 'user', content: userText }]);
+      historyRef.current = [...historyRef.current, { role: 'user', content: userText }];
+
+      updatePhase('thinking');
+
+      try {
+        const res = await fetch('/api/jordan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: userText, history: historyRef.current.slice(-12) }),
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(`API error ${res.status}: ${err}`);
+        }
+
+        const agentTextRaw = res.headers.get('X-Agent-Text') ?? '';
+        const agentText = agentTextRaw ? decodeURIComponent(agentTextRaw) : '';
+        if (agentText) {
+          const aid = String(++msgIdRef.current);
+          setMessages((prev) => [
+            ...prev,
+            { id: aid, role: 'agent', content: agentText },
+          ]);
+          historyRef.current = [
+            ...historyRef.current,
+            { role: 'assistant', content: agentText },
+          ];
+        }
+
+        const audioBuf = await res.arrayBuffer();
+        updatePhase('speaking');
+        await playAudioRef.current(audioBuf);
+      } catch (err) {
+        console.error('[Jordan] ask error:', err);
+      }
+
+      if (isActiveRef.current) updatePhase('listening');
+    },
+    [updatePhase]
+  );
+
+  const askRef = useRef(ask);
+  askRef.current = ask;
+
+  const startCycle = useCallback(() => {
+    const recognition = recognitionRef.current;
+    if (!recognition || !isActiveRef.current) return;
+
+    transcriptRef.current = '';
+    setTranscript('');
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let text = '';
+      for (let i = 0; i < event.results.length; i++) {
+        text += event.results[i][0].transcript;
+      }
+      transcriptRef.current = text;
+      setTranscript(text);
+    };
+
+    recognition.onend = async () => {
+      const text = transcriptRef.current.trim();
+      transcriptRef.current = '';
+      setTranscript('');
+
+      if (!isActiveRef.current) return;
+
+      if (text) {
+        await askRef.current(text);
+      }
+
+      if (isActiveRef.current) {
+        try {
+          recognition.start();
+        } catch {
+          /* already started */
+        }
+      }
+    };
+
+    try {
+      recognition.start();
+      updatePhase('listening');
+    } catch {
+      /* ignore */
+    }
+  }, [updatePhase]);
+
+  const startCycleRef = useRef(startCycle);
+  startCycleRef.current = startCycle;
+
+  const stopSession = useCallback(() => {
+    isActiveRef.current = false;
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      /* ignore */
+    }
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    cancelAnimationFrame(animFrameRef.current);
+    updatePhase('idle');
+    setIsConnected(false);
+    setVolume(0);
+    setTranscript('');
+    transcriptRef.current = '';
+  }, [updatePhase]);
+
+  const toggleMic = useCallback(() => {
+    setMicEnabled((prev) => {
+      const next = !prev;
+      streamRef.current?.getAudioTracks().forEach((t) => {
+        t.enabled = next;
+      });
+      return next;
+    });
+  }, []);
+
+  const startListening = useCallback(async () => {
+    if (isActiveRef.current) return;
+
+    const SpeechRecognitionCtor =
+      typeof window !== 'undefined'
+        ? (window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null)
+        : null;
+
+    if (!SpeechRecognitionCtor) {
+      alert('Kein Web Speech API verfügbar. Bitte Chrome oder Edge verwenden.');
+      return;
+    }
+
+    try {
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      alert('Mikrofon-Zugriff wurde verweigert. Bitte Berechtigung erteilen.');
+      return;
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = 'de-DE';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
+      if (e.error === 'no-speech') return;
+      console.error('[Jordan] STT error:', e.error);
+    };
+    recognitionRef.current = recognition;
+
+    isActiveRef.current = true;
+    setIsConnected(true);
+    updatePhase('connecting');
+
+    setTimeout(() => {
+      if (isActiveRef.current) startCycleRef.current();
+    }, 400);
+  }, [updatePhase]);
+
+  useEffect(() => {
+    return () => {
+      isActiveRef.current = false;
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        /* ignore */
+      }
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
+
+  return {
+    phase,
+    isConnected,
+    volume,
+    transcript,
+    messages,
+    micEnabled,
+    startListening,
+    stopSession,
+    toggleMic,
+  };
+}
