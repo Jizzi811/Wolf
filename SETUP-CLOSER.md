@@ -240,6 +240,9 @@ damit Stimme, Intelligenz und Anbieter getrennt konfigurierbar bleiben.
 - **Es meldet sich niemand:** Läuft der Voice-Agent (`voice-agent/`, `pnpm dev`)?
   Stimmen `AGENT_NAME` und LiveKit-Zugangsdaten in beiden `.env.local` überein?
 - **„Konfiguration unvollständig“:** `LIVEKIT_URL/API_KEY/API_SECRET` prüfen.
+- **`maximum number of agents reached (1/1)`:** Du versuchst, den Agent **bei
+  LiveKit** zu hosten – das ist limitiert. Stattdessen selbst betreiben
+  (Abschnitt 12, „Agent selbst hosten"). Den hängenden LiveKit-Deploy löschen.
 - **Agent-Logs:** `CLOSER_DEBUG=true` im Voice-Agent setzen.
 - **Checks ausführen:** siehe Abschnitt „Prüfung“ in dieser Datei / README.
 
@@ -261,6 +264,39 @@ Rohfehler (siehe `components/closer/closer-error.tsx`).
   (`pnpm start`), z. B. Container/Worker. Er läuft **getrennt** vom Frontend.
   LiveKit-Zugangsdaten als Environment-Variablen setzen.
 - Build-Befehle: Frontend `pnpm build`; Voice-Agent `pnpm typecheck` (+ Tests).
+
+### Agent selbst hosten – NICHT bei LiveKit „deployen"
+
+> **Wichtig:** „Deploy new agent" in der LiveKit-Konsole = LiveKit **hostet** den
+> Agent für dich. Der kostenlose Tarif erlaubt nur **einen** solchen gehosteten
+> Agent (Fehler `maximum number of agents reached (1/1)`). Unser Agent braucht
+> das **nicht**: Er läuft auf **deiner** Infrastruktur und **verbindet sich nur**
+> mit dem LiveKit-Projekt über den API-Key – das zählt nicht gegen dieses Limit.
+
+Der Ordner `voice-agent/` enthält dafür ein **`Dockerfile`** (Node 24). Damit
+lässt sich der Agent überall als Container betreiben (Sevalla-Dienst, VM,
+beliebiger Container-Host):
+
+```bash
+# im Ordner voice-agent/
+docker build -t closer-agent .
+docker run --env-file .env.local closer-agent
+```
+
+**Auf Sevalla** als zweiter Dienst:
+
+1. Neuen Dienst anlegen, **Root-Verzeichnis** auf `voice-agent` setzen (damit das
+   Dockerfile gefunden wird).
+2. **Environment-Variablen** setzen: `LIVEKIT_URL`, `LIVEKIT_API_KEY`,
+   `LIVEKIT_API_SECRET`, `AGENT_NAME=CLOSER`, `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`
+   (plus optional `CLOSER_TTS_PROVIDER` / `CLOSER_DEEPGRAM_TTS_MODEL`).
+3. Deploy. Der Dienst ist ein **Worker** (kein Web-Port nötig) und verbindet sich
+   selbstständig mit LiveKit.
+
+> LiveKit-Projekt: Du kannst dasselbe Projekt wie ein anderer Agent nutzen
+> (mit eindeutigem `AGENT_NAME` für expliziten Dispatch) – ihr teilt euch dann
+> die Freiminuten – oder für saubere Trennung ein eigenes LiveKit-Projekt/Konto
+> anlegen.
 
 ---
 

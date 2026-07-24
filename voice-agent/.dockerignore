@@ -1,0 +1,32 @@
+# Tests (nicht ins Produktions-Image)
+**/*.test.ts
+**/*.spec.ts
+tests/
+
+# Node.js
+node_modules
+npm-debug.log
+pnpm-debug.log
+
+# Build-/Temp-Ausgaben
+dist/
+build/
+coverage/
+*.log
+*.tsbuildinfo
+.cache
+
+# Secrets / Umgebungsdateien – NIEMALS ins Image
+.env
+.env.*
+
+# VCS, Editor, OS
+.git
+.gitignore
+.idea/
+.vscode/
+.DS_Store
+
+# Doku
+README.md
+LICENSE
