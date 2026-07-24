@@ -16,6 +16,42 @@ die Verbindung her; der Agent liefert Stimme und Intelligenz.
 
 ---
 
+## 0. Zwei Voice-Engines (wichtig zuerst lesen)
+
+CLOSER kann die „Sprech-Maschine" auf zwei Arten betreiben – umschaltbar über
+`NEXT_PUBLIC_VOICE_ENGINE`:
+
+- **`deepgram` (Standard, empfohlen):** Deepgram Voice Agent. Hören + Denken +
+  Sprechen laufen über **eine** Verbindung direkt im Browser. **Kein LiveKit,
+  kein Dauer-Worker, keine zweite App.** Es genügt **ein** Server-Key
+  (`DEEPGRAM_API_KEY`); das LLM (OpenAI/GPT) wird von Deepgram verwaltet und über
+  dein Deepgram-Guthaben abgerechnet. Deutsche Stimme (z. B. „Julius").
+  → Der Ordner `voice-agent/` wird für diesen Weg **nicht** gebraucht.
+- **`livekit`:** die ursprüngliche Architektur mit separatem `voice-agent/`
+  Backend (Abschnitte weiter unten). Nur nötig, wenn du LiveKit brauchst.
+
+### Schnellstart mit der Deepgram-Engine
+
+1. In der App (z. B. Sevalla) Environment-Variablen setzen:
+
+   ```env
+   NEXT_PUBLIC_VOICE_ENGINE=deepgram
+   DEEPGRAM_API_KEY=<dein_deepgram_key>     # nur serverseitig!
+   CLOSER_DG_VOICE=aura-2-julius-de          # exakte deutsche Stimmen-ID
+   CLOSER_DG_LANGUAGE=de
+   CLOSER_DG_THINK_MODEL=gpt-4o-mini
+   ```
+
+2. Deployen. Fertig – „Gespräch starten" verbindet direkt mit Deepgram.
+   Check: `/api/dg-token` liefert ein Token (kein `{"configured":false}`).
+
+> **Sicherheit:** `DEEPGRAM_API_KEY` NUR als normale (nicht `NEXT_PUBLIC_`)
+> Server-Variable setzen. Der Browser erhält ausschließlich ein kurzlebiges
+> Token aus `/api/dg-token`. Schlüssel niemals in Screenshots, Chats oder
+> `.env`-Dateien in fremde Tools kopieren.
+
+---
+
 ## 1. Voraussetzungen
 
 - **Node.js**

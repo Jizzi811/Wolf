@@ -249,8 +249,10 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
         />
       </div>
 
-      {/* Integrierter LiveKit-Audio-Visualizer während der Session (Sektion 5) */}
-      {isConnected && (
+      {/* Integrierter LiveKit-Audio-Visualizer während der Session (Sektion 5).
+          Nur bei vorhandenem LiveKit-Audiotrack; die Deepgram-Engine liefert
+          keinen Track und treibt den Orb rein über Phase + Lautstärke. */}
+      {isConnected && audioTrack && (
         <div className="pointer-events-none absolute bottom-[-6%] left-1/2 z-20 -translate-x-1/2">
           <AgentAudioVisualizerBar
             size="sm"
