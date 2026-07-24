@@ -211,7 +211,9 @@ export function useDeepgramCloser(): DeepgramCloserState {
     try {
       const res = await fetch('/api/dg-token', { method: 'GET', cache: 'no-store' });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+        // Nur in die Konsole – kein Rohfehler im UI (Sektion 8/21).
+        console.error('[CLOSER] /api/dg-token fehlgeschlagen:', res.status, body);
         showCloserError(body.error === 'config' ? 'config' : 'connection');
         setPhase('idle');
         startingRef.current = false;
@@ -220,7 +222,15 @@ export function useDeepgramCloser(): DeepgramCloserState {
       const data = (await res.json()) as { token: string; config: DeepgramAgentConfig };
       token = data.token;
       config = data.config;
-    } catch {
+      if (!token) {
+        console.error('[CLOSER] /api/dg-token lieferte kein Token:', data);
+        showCloserError('config');
+        setPhase('idle');
+        startingRef.current = false;
+        return;
+      }
+    } catch (error) {
+      console.error('[CLOSER] /api/dg-token nicht erreichbar:', error);
       showCloserError('connection');
       setPhase('idle');
       startingRef.current = false;
@@ -302,12 +312,15 @@ export function useDeepgramCloser(): DeepgramCloserState {
       setTranscript((prev) => [...prev, { role: msg.role ?? 'assistant', content: msg.content! }]);
     });
 
-    client.on(AgentEvents.Error, () => {
+    client.on(AgentEvents.Error, (payload: unknown) => {
+      // Genaue Ursache in die Konsole (z. B. ungültiges Token, kein Voice-Agent-Zugang).
+      console.error('[CLOSER] Deepgram Voice Agent Error:', payload);
       showCloserError('agentUnreachable');
       end();
     });
 
-    client.on(AgentEvents.Close, () => {
+    client.on(AgentEvents.Close, (payload: unknown) => {
+      console.warn('[CLOSER] Deepgram Voice Agent Verbindung geschlossen:', payload);
       if (clientRef.current) end();
     });
   }, [cleanup, enqueueAudio, end, startMicrophone]);
