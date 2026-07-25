@@ -16,6 +16,63 @@ die Verbindung her; der Agent liefert Stimme und Intelligenz.
 
 ---
 
+## 0. Zwei Voice-Engines (wichtig zuerst lesen)
+
+CLOSER kann die „Sprech-Maschine" auf zwei Arten betreiben – umschaltbar über
+`NEXT_PUBLIC_VOICE_ENGINE`:
+
+- **`deepgram` (Standard, empfohlen):** Deepgram Voice Agent. Hören + Denken +
+  Sprechen laufen über **eine** Verbindung direkt im Browser. **Kein LiveKit,
+  kein Dauer-Worker, keine zweite App.** Es genügt **ein** Server-Key
+  (`DEEPGRAM_API_KEY`); das LLM (OpenAI/GPT) wird von Deepgram verwaltet und über
+  dein Deepgram-Guthaben abgerechnet. Deutsche Stimme (z. B. „Julius").
+  → Der Ordner `voice-agent/` wird für diesen Weg **nicht** gebraucht.
+- **`livekit`:** die ursprüngliche Architektur mit separatem `voice-agent/`
+  Backend (Abschnitte weiter unten). Nur nötig, wenn du LiveKit brauchst.
+
+### Schnellstart mit der Deepgram-Engine
+
+1. In der App (z. B. Sevalla) Environment-Variablen setzen:
+
+   ```env
+   NEXT_PUBLIC_VOICE_ENGINE=deepgram
+   DEEPGRAM_API_KEY=<dein_deepgram_key>     # nur serverseitig!
+   CLOSER_DG_VOICE=aura-2-julius-de          # exakte deutsche Stimmen-ID
+   CLOSER_DG_LANGUAGE=de
+   CLOSER_DG_THINK_MODEL=gpt-4o-mini
+   ```
+
+2. Deployen. Fertig – „Gespräch starten" verbindet direkt mit Deepgram.
+   Check: `/api/dg-token` liefert ein Token (kein `{"configured":false}`).
+
+> **Sicherheit:** `DEEPGRAM_API_KEY` NUR als normale (nicht `NEXT_PUBLIC_`)
+> Server-Variable setzen. Der Browser erhält ausschließlich ein kurzlebiges
+> Token aus `/api/dg-token`. Schlüssel niemals in Screenshots, Chats oder
+> `.env`-Dateien in fremde Tools kopieren.
+
+### Gehirn (LLM): Deepgram-verwaltet oder Groq
+
+Standardmäßig verwaltet Deepgram das LLM (OpenAI/GPT) und rechnet es über dein
+Deepgram-Guthaben ab – kein weiterer Key nötig. Optional kannst du **Groq**
+(schnell, günstig, großzügiges Freikontingent) als Gehirn nutzen:
+
+```env
+CLOSER_DG_THINK_PROVIDER=groq
+CLOSER_DG_THINK_MODEL=llama-3.3-70b-versatile   # aktuelle Groq-Modell-ID prüfen
+GROQ_API_KEY=<dein_groq_key>                     # bleibt serverseitig!
+GROQ_PROXY_SECRET=<frei-wählbares-geheimnis>     # optionaler Schutz des Proxys
+```
+
+Groq läuft über den Server-Proxy `/api/llm-proxy` – der Groq-Key verlässt den
+Server **nie**. Deepgrams Server rufen den Proxy öffentlich auf; er hängt den
+Key an und leitet an Groq weiter. Modell-IDs ändern sich – die aktuelle Liste
+steht in der Groq-Konsole.
+
+> Hinweis: `GROQ_PROXY_SECRET` ist ein leichter Schutz (der Wert ist im Browser
+> sichtbar). Der eigentliche Schutz ist, dass der Groq-Key serverseitig bleibt.
+
+---
+
 ## 1. Voraussetzungen
 
 - **Node.js**
@@ -85,8 +142,10 @@ pnpm start
 4. `AGENT_NAME` in beiden Dateien identisch setzen (Standard: `CLOSER`) für
    expliziten Dispatch – oder in beiden leer lassen für automatischen Dispatch.
 
-Die Standard-Sprachpipeline nutzt **LiveKit Inference**: LLM, STT und TTS
-laufen über die LiveKit-Zugangsdaten, **ohne** separate Provider-Keys.
+Für die **KI** (Hören/Denken/Sprechen) gibt es zwei Wege: eigene Anbieter
+(Deepgram + OpenAI, empfohlen und günstig) oder LiveKit Inference. Details in
+Abschnitt 10. LiveKit selbst wird in beiden Fällen als **Audiotransport**
+benötigt.
 
 ---
 
@@ -105,20 +164,33 @@ laufen über die LiveKit-Zugangsdaten, **ohne** separate Provider-Keys.
 
 ### Voice-Agent – `voice-agent/.env.local` (aus `voice-agent/.env.example`)
 
-| Variable               | Zweck                                                            |
-| ---------------------- | ---------------------------------------------------------------- |
-| `LIVEKIT_URL`          | WebSocket-URL des LiveKit-Projekts                               |
-| `LIVEKIT_API_KEY`      | API-Key                                                          |
-| `LIVEKIT_API_SECRET`   | API-Secret                                                       |
-| `AGENT_NAME`           | Agentenname / Dispatch-Name (Standard `CLOSER`)                  |
-| `VOICE_ID`             | Stimmen-ID des TTS-Anbieters (leer = Standardstimme)             |
-| `CLOSER_LLM_MODEL`     | Optional: LLM-Modell überschreiben                               |
-| `CLOSER_STT_MODEL`     | Optional: Speech-to-Text-Modell überschreiben                    |
-| `CLOSER_TTS_MODEL`     | Optional: Text-to-Speech-Modell überschreiben                    |
-| `CLOSER_LANGUAGE`      | Optional: Standardsprache (Standard `de`)                        |
-| `CLOSER_GREETING`      | Optional: Begrüßungstext überschreiben                           |
-| `LEAD_CAPTURE_ENABLED` | Lead-Erfassung aktivieren (Standard `false`, siehe Abschnitt 13) |
-| `CLOSER_DEBUG`         | Ausführliche Logausgaben (`true`/`false`)                        |
+| Variable                    | Zweck                                                          |
+| --------------------------- | -------------------------------------------------------------- |
+| `LIVEKIT_URL`               | WebSocket-URL des LiveKit-Projekts (nur Audiotransport)        |
+| `LIVEKIT_API_KEY`           | API-Key                                                        |
+| `LIVEKIT_API_SECRET`        | API-Secret                                                     |
+| `AGENT_NAME`                | Agentenname / Dispatch-Name (Standard `CLOSER`)                |
+| `CLOSER_PIPELINE`           | `providers` oder `inference` (leer = automatisch, siehe unten) |
+| `DEEPGRAM_API_KEY`          | Deepgram: Hören (STT) und optional Stimme (TTS)                |
+| `OPENAI_API_KEY`            | OpenAI: Denken (LLM/GPT) und Standard-Stimme (TTS)             |
+| `CLOSER_TTS_PROVIDER`       | `openai` (Deutsch, Standard) oder `deepgram`                   |
+| `CLOSER_TTS_VOICE`          | OpenAI-Stimme (z. B. `onyx`, `ash`, `sage`)                    |
+| `CLOSER_DEEPGRAM_TTS_MODEL` | Deepgram-Stimme (exakte Modell-ID, z. B. deutsche Aura-2)      |
+| `CLOSER_LLM_MODEL`          | Optional: LLM-Modell überschreiben                             |
+| `CLOSER_STT_MODEL`          | Optional: STT-Modell überschreiben                             |
+| `CLOSER_LANGUAGE`           | Optional: Standardsprache (Standard `de`)                      |
+| `CLOSER_GREETING`           | Optional: Begrüßungstext überschreiben                         |
+| `LEAD_CAPTURE_ENABLED`      | Lead-Erfassung aktivieren (Standard `false`, Abschnitt 13)     |
+| `CLOSER_DEBUG`              | Ausführliche Logausgaben (`true`/`false`)                      |
+
+**Zwei Pipelines** (Abschnitt 10):
+
+- **`providers`** (empfohlen, günstig): Deepgram (STT) + OpenAI (LLM) + Stimme
+  (OpenAI oder Deepgram). LiveKit dient nur als Audiotransport – **keine
+  LiveKit-Inference-Kosten**. Aktiv, sobald `DEEPGRAM_API_KEY` **und**
+  `OPENAI_API_KEY` gesetzt sind.
+- **`inference`**: STT/LLM/TTS über LiveKit Inference (ohne separate Keys, aber
+  kostenpflichtig bei LiveKit).
 
 > **Sicherheit:** API-Secrets gehören ausschließlich serverseitig. Niemals in
 > `NEXT_PUBLIC_`-Variablen speichern, niemals echte Schlüssel committen.
@@ -168,24 +240,49 @@ zusammengeführt.
 
 ---
 
-## 10. Stimme und Modelle ändern
+## 10. Pipeline, Stimme und Modelle ändern
 
-Alle austauschbaren Bausteine sind in **`voice-agent/src/config.ts`** gebündelt:
+Alle austauschbaren Bausteine sind in **`voice-agent/src/config.ts`** gebündelt
+und über Environment-Variablen steuerbar (`voice-agent/.env.local`).
 
-- `llm.model` – Sprachmodell (Intelligenz)
-- `stt.model` / `stt.language` – Spracherkennung (`multi` = automatisch mehrsprachig)
-- `tts.model` / `tts.voice` – Stimme
+### Pipeline „providers" (empfohlen – nutzt deine eigenen Keys)
 
-Am einfachsten per Environment-Variable überschreiben (`CLOSER_LLM_MODEL`,
-`CLOSER_STT_MODEL`, `CLOSER_TTS_MODEL`, `VOICE_ID`).
+Deepgram (Hören) + OpenAI (Denken) + Stimme (OpenAI **oder** Deepgram). LiveKit
+ist dann nur das Audiokabel – **keine LiveKit-Inference-Kosten**. Aktiviert sich
+automatisch, sobald beide Keys gesetzt sind:
 
-> **Wichtig:** Verfügbare Modelle und Stimmen bitte in der LiveKit-Dokumentation
-> prüfen, bevor sie geändert werden (Modellnamen ändern sich):
-> LLM <https://docs.livekit.io/agents/models/llm/> ·
-> STT <https://docs.livekit.io/agents/models/stt/> ·
-> TTS <https://docs.livekit.io/agents/models/tts/>.
-> Die Standardwerte entsprechen dem offiziellen LiveKit Node-Starter.
-> **Keine Stimme einer realen Person klonen.**
+```env
+DEEPGRAM_API_KEY=...      # STT (und optional die Stimme)
+OPENAI_API_KEY=...        # LLM/GPT (und Standard-Stimme)
+```
+
+**Deutsche Stimme wählen:**
+
+- **OpenAI-TTS (Standard, mehrsprachig):**
+  ```env
+  CLOSER_TTS_PROVIDER=openai
+  CLOSER_TTS_VOICE=onyx      # alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer
+  ```
+- **Deepgram-Stimme (z. B. deutsche Aura-2-„Julius"-Variante):** die **exakte
+  Modell-ID** aus der Deepgram-Doku eintragen:
+  ```env
+  CLOSER_TTS_PROVIDER=deepgram
+  CLOSER_DEEPGRAM_TTS_MODEL=<exakte-deepgram-modell-id>
+  ```
+
+Modelle optional überschreiben: `CLOSER_LLM_MODEL` (OpenAI-Modell, z. B.
+`gpt-4o-mini`), `CLOSER_STT_MODEL` (Deepgram, z. B. `nova-3`).
+
+### Pipeline „inference" (alles über LiveKit)
+
+`CLOSER_PIPELINE=inference` – nutzt LiveKit Inference (kostenpflichtig bei
+LiveKit), keine separaten Keys nötig. Modelle via `CLOSER_LLM_MODEL`,
+`CLOSER_STT_MODEL`, `CLOSER_TTS_MODEL`, `VOICE_ID`.
+
+> **Wichtig:** Modell-/Stimmen-Namen ändern sich – bitte in der jeweiligen Doku
+> prüfen: OpenAI (LLM/TTS), Deepgram (STT/TTS) bzw. LiveKit
+> (<https://docs.livekit.io/agents/models/>). **Keine Stimme einer realen
+> Person klonen.**
 
 Für eine Realtime-Pipeline statt STT→LLM→TTS siehe die LiveKit-Doku
 (`RealtimeModel`) – die erste Version nutzt bewusst die klassische Pipeline,
@@ -200,6 +297,9 @@ damit Stimme, Intelligenz und Anbieter getrennt konfigurierbar bleiben.
 - **Es meldet sich niemand:** Läuft der Voice-Agent (`voice-agent/`, `pnpm dev`)?
   Stimmen `AGENT_NAME` und LiveKit-Zugangsdaten in beiden `.env.local` überein?
 - **„Konfiguration unvollständig“:** `LIVEKIT_URL/API_KEY/API_SECRET` prüfen.
+- **`maximum number of agents reached (1/1)`:** Du versuchst, den Agent **bei
+  LiveKit** zu hosten – das ist limitiert. Stattdessen selbst betreiben
+  (Abschnitt 12, „Agent selbst hosten"). Den hängenden LiveKit-Deploy löschen.
 - **Agent-Logs:** `CLOSER_DEBUG=true` im Voice-Agent setzen.
 - **Checks ausführen:** siehe Abschnitt „Prüfung“ in dieser Datei / README.
 
@@ -212,13 +312,48 @@ Rohfehler (siehe `components/closer/closer-error.tsx`).
 
 - **Frontend:** Als normale Next.js-App deploybar (z. B. Vercel). LiveKit-Secrets
   als serverseitige Environment-Variablen hinterlegen.
-  - ⚠️ Die enthaltene Token-Route `app/api/token/route.ts` ist ein
-    **Entwicklungs-Endpunkt** und wirft in Produktion absichtlich einen Fehler.
-    Vor dem Produktivbetrieb eine **authentifizierte** Token-Ausgabe ergänzen.
+  - Die Token-Route `app/api/token/route.ts` funktioniert auch in Produktion
+    (sie meldet fehlende Zugangsdaten klar). ⚠️ Sie gibt Tokens jedoch **ohne
+    eigene Authentifizierung** aus – vor einem öffentlichen Launch davor eine
+    Auth-Schicht (Login/Rate-Limit) ergänzen. Zum harten Sperren:
+    `LIVEKIT_TOKEN_ROUTE_DISABLED=true`.
 - **Voice-Agent:** Als eigenständiger, langlebiger Node-Prozess deployen
   (`pnpm start`), z. B. Container/Worker. Er läuft **getrennt** vom Frontend.
   LiveKit-Zugangsdaten als Environment-Variablen setzen.
 - Build-Befehle: Frontend `pnpm build`; Voice-Agent `pnpm typecheck` (+ Tests).
+
+### Agent selbst hosten – NICHT bei LiveKit „deployen"
+
+> **Wichtig:** „Deploy new agent" in der LiveKit-Konsole = LiveKit **hostet** den
+> Agent für dich. Der kostenlose Tarif erlaubt nur **einen** solchen gehosteten
+> Agent (Fehler `maximum number of agents reached (1/1)`). Unser Agent braucht
+> das **nicht**: Er läuft auf **deiner** Infrastruktur und **verbindet sich nur**
+> mit dem LiveKit-Projekt über den API-Key – das zählt nicht gegen dieses Limit.
+
+Der Ordner `voice-agent/` enthält dafür ein **`Dockerfile`** (Node 24). Damit
+lässt sich der Agent überall als Container betreiben (Sevalla-Dienst, VM,
+beliebiger Container-Host):
+
+```bash
+# im Ordner voice-agent/
+docker build -t closer-agent .
+docker run --env-file .env.local closer-agent
+```
+
+**Auf Sevalla** als zweiter Dienst:
+
+1. Neuen Dienst anlegen, **Root-Verzeichnis** auf `voice-agent` setzen (damit das
+   Dockerfile gefunden wird).
+2. **Environment-Variablen** setzen: `LIVEKIT_URL`, `LIVEKIT_API_KEY`,
+   `LIVEKIT_API_SECRET`, `AGENT_NAME=CLOSER`, `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`
+   (plus optional `CLOSER_TTS_PROVIDER` / `CLOSER_DEEPGRAM_TTS_MODEL`).
+3. Deploy. Der Dienst ist ein **Worker** (kein Web-Port nötig) und verbindet sich
+   selbstständig mit LiveKit.
+
+> LiveKit-Projekt: Du kannst dasselbe Projekt wie ein anderer Agent nutzen
+> (mit eindeutigem `AGENT_NAME` für expliziten Dispatch) – ihr teilt euch dann
+> die Freiminuten – oder für saubere Trennung ein eigenes LiveKit-Projekt/Konto
+> anlegen.
 
 ---
 
@@ -238,4 +373,5 @@ Rohfehler (siehe `components/closer/closer-error.tsx`).
 - **Open-Graph-Bild** (`app/opengraph-image.tsx`) – schlichter, selbsttragender
   Platzhalter. Bei Bedarf durch ein echtes Motiv ersetzen.
 - **Favicon** (`app/favicon.ico`) – aktuell das Starter-Icon; bei Bedarf ersetzen.
-- **Token-Route** – Entwicklungs-Endpunkt, für Produktion abzusichern (Abschnitt 12).
+- **Token-Route** – funktionsfähig, aber ohne eigene Authentifizierung; vor
+  öffentlichem Launch absichern (Abschnitt 12).

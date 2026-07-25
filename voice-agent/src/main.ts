@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { ServerOptions, cli, defineAgent, inference, voice } from '@livekit/agents';
 import { createAgent } from './agent.ts';
 import { config } from './config.ts';
+import { buildSTT, buildTTS } from './pipeline.ts';
 
 // Environment-Variablen laden. Erwartet werden LIVEKIT_URL, LIVEKIT_API_KEY
 // und LIVEKIT_API_SECRET (siehe .env.example). Niemals Secrets committen.
@@ -14,20 +15,12 @@ export default defineAgent({
     // Intelligenz und Anbieter sind so getrennt konfigurierbar. Das LLM sitzt
     // am Agenten (siehe agent.ts).
     const session = new voice.AgentSession({
-      // Speech-to-Text – "multi" erkennt automatisch die Sprache des Nutzers.
-      stt: new inference.STT({
-        model: config.stt.model,
-        language: config.stt.language,
-      }),
-
-      // Text-to-Speech – Stimme über VOICE_ID / config.ts austauschbar.
-      tts: new inference.TTS({
-        model: config.tts.model,
-        voice: config.tts.voice,
-      }),
+      // STT (Ohr) und TTS (Stimme) je nach Pipeline (siehe config.ts/pipeline.ts).
+      stt: buildSTT(),
+      tts: buildTTS(),
 
       // Turn-Erkennung: bestimmt, wann der Nutzer fertig gesprochen hat.
-      // Die benötigte VAD wird von der AgentSession automatisch bereitgestellt.
+      // VAD und Turn-Detection stellt die AgentSession lokal bereit (kostenlos).
       turnHandling: {
         turnDetection: new inference.TurnDetector(),
         // Antwort schon während des Wartens auf das Turn-Ende vorbereiten.
@@ -50,7 +43,11 @@ export default defineAgent({
     await session.say(config.greeting);
 
     if (config.debug) {
-      console.log(`[CLOSER] Agent "${config.agentName}" bereit. LLM=${config.llm.model}`);
+      const llmModel =
+        config.pipeline === 'providers' ? config.providers.llm : config.inference.llm;
+      console.log(
+        `[CLOSER] Agent "${config.agentName}" bereit. Pipeline=${config.pipeline} LLM=${llmModel}`
+      );
     }
   },
 });

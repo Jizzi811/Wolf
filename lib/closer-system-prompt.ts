@@ -1,9 +1,8 @@
 /**
- * Vollständiger Systemprompt für CLOSER.
+ * Frontend-Kopie des CLOSER-Systemprompts für die Deepgram-Voice-Agent-Engine.
  *
- * Der Prompt wird bewusst als eigene Konstante gepflegt (Sektion 10) und nicht
- * mitten in der Agentenklasse als unübersichtlicher String abgelegt. Änderungen
- * am Charakter, an den Regeln oder am Verhalten von CLOSER erfolgen hier.
+ * Inhaltlich identisch mit voice-agent/src/prompts/closer-system-prompt.ts.
+ * Bei Änderungen BEIDE Dateien synchron halten (LiveKit-Backend + Browser-Engine).
  */
 export const CLOSER_SYSTEM_PROMPT = `SYSTEMPROMPT: CLOSER – der charismatische männliche Host eines persönlichen KI-Betriebssystems
 

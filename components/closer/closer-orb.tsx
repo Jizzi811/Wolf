@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'motion/react';
+import type { AgentState, TrackReference } from '@livekit/components-react';
+import { AgentAudioVisualizerBar } from '@/components/agents-ui/agent-audio-visualizer-bar';
 import type { CloserPhase } from '@/hooks/useCloserState';
 import { CLOSER_CONTENT } from '@/lib/closer-content';
 import { cn } from '@/lib/shadcn/utils';
@@ -11,8 +13,10 @@ interface CloserOrbProps {
   phase: CloserPhase;
   /** Audiopegel des Agenten (0–1) für die Sprech-Reaktion. */
   volume: number;
+  /** Agenten-Audiotrack für den integrierten Visualizer. */
+  audioTrack?: TrackReference;
   /** Ob eine Session verbunden ist (blendet den Visualizer ein). */
-  isConnected?: boolean;
+  isConnected: boolean;
   className?: string;
 }
 
@@ -87,14 +91,20 @@ const PHASE_CONFIG: Record<
   },
 };
 
-/** Simple bar heights based on position to create a wave shape. */
-const BAR_FACTORS = [0.4, 0.7, 1.0, 0.7, 0.4] as const;
+const PHASE_TO_AGENT_STATE: Record<CloserPhase, AgentState> = {
+  idle: 'listening',
+  connecting: 'connecting',
+  listening: 'listening',
+  thinking: 'thinking',
+  speaking: 'speaking',
+};
 
-export function CloserOrb({ phase, volume, isConnected = false, className }: CloserOrbProps) {
+export function CloserOrb({ phase, volume, audioTrack, isConnected, className }: CloserOrbProps) {
   const [imageOk, setImageOk] = useState(true);
   const config = PHASE_CONFIG[phase];
   const clampedVolume = Math.min(Math.max(volume, 0), 1);
 
+  // Audioreaktive Werte: nur beim Sprechen deutlich, sonst ruhiger Grundzustand.
   const isSpeaking = phase === 'speaking';
   const orbScale = isSpeaking ? 1 + clampedVolume * 0.05 : 1;
   const glowOpacity = isSpeaking ? config.baseGlow + clampedVolume * 0.45 : config.baseGlow;
@@ -108,13 +118,13 @@ export function CloserOrb({ phase, volume, isConnected = false, className }: Clo
       )}
       style={config.vars}
     >
-      {/* Weicher radialer Goldschein hinter dem Orb */}
+      {/* Weicher radialer Iris-Schein hinter dem Orb (reagiert auf Audio) */}
       <motion.div
         aria-hidden="true"
         className="absolute inset-0 rounded-full blur-2xl"
         style={{
           background:
-            'radial-gradient(circle, rgba(243,213,138,0.55) 0%, rgba(212,166,58,0.28) 40%, transparent 70%)',
+            'radial-gradient(circle, rgba(201,184,255,0.55) 0%, rgba(139,108,255,0.28) 40%, transparent 70%)',
         }}
         animate={{ opacity: glowOpacity, scale: glowScale }}
         transition={{ type: 'spring', stiffness: 120, damping: 18 }}
@@ -124,20 +134,20 @@ export function CloserOrb({ phase, volume, isConnected = false, className }: Clo
       <div
         aria-hidden="true"
         className="closer-anim-halo-pulse border-gold/30 absolute inset-[6%] rounded-full border"
-        style={{ boxShadow: '0 0 60px rgba(212,166,58,0.25) inset' }}
+        style={{ boxShadow: '0 0 60px rgba(139,108,255,0.25) inset' }}
       />
       <div
         aria-hidden="true"
         className="closer-anim-halo-pulse border-gold/15 absolute inset-[-4%] rounded-full border"
       />
 
-      {/* Rotierender Lichtbogen */}
+      {/* Rotierender Lichtbogen (Verbindungsaufbau & dezent bei Aktivität) */}
       <div aria-hidden="true" className="closer-anim-halo-rotate absolute inset-[-2%]">
         <div
           className="absolute inset-0 rounded-full"
           style={{
             background:
-              'conic-gradient(from 0deg, transparent 0deg, rgba(243,213,138,0.5) 40deg, transparent 90deg)',
+              'conic-gradient(from 0deg, transparent 0deg, rgba(201,184,255,0.5) 40deg, transparent 90deg)',
             opacity: phase === 'connecting' ? 0.9 : 0.35,
             maskImage:
               'radial-gradient(circle, transparent 62%, black 64%, black 66%, transparent 68%)',
@@ -172,7 +182,7 @@ export function CloserOrb({ phase, volume, isConnected = false, className }: Clo
               style={{
                 marginLeft: '-4px',
                 marginTop: '-4px',
-                boxShadow: '0 0 10px rgba(243,213,138,0.9)',
+                boxShadow: '0 0 10px rgba(201,184,255,0.9)',
                 animationDelay: `${i * -1.5}s`,
               }}
             />
@@ -213,6 +223,7 @@ export function CloserOrb({ phase, volume, isConnected = false, className }: Clo
             onError={() => setImageOk(false)}
           />
         ) : (
+          // CSS-Fallback, falls /johann-orb.png (noch) nicht vorhanden ist.
           <OrbFallback />
         )}
       </motion.div>
@@ -226,37 +237,31 @@ export function CloserOrb({ phase, volume, isConnected = false, className }: Clo
           className="absolute inset-0 rounded-[50%]"
           style={{
             background:
-              'radial-gradient(ellipse at center, rgba(243,213,138,0.25) 0%, rgba(212,166,58,0.08) 45%, transparent 70%)',
+              'radial-gradient(ellipse at center, rgba(201,184,255,0.25) 0%, rgba(139,108,255,0.08) 45%, transparent 70%)',
           }}
         />
         <div
           className="closer-anim-halo-rotate absolute inset-x-[10%] top-1/2 h-[2px] -translate-y-1/2 rounded-full"
           style={{
             background:
-              'linear-gradient(to right, transparent, rgba(243,213,138,0.6), transparent)',
+              'linear-gradient(to right, transparent, rgba(201,184,255,0.6), transparent)',
           }}
         />
       </div>
 
-      {/* Lautstärke-Visualizer (ersetzt LiveKit AudioVisualizerBar) */}
-      {isConnected && (
-        <div className="pointer-events-none absolute bottom-[-6%] left-1/2 z-20 flex -translate-x-1/2 items-end gap-[3px]">
-          {BAR_FACTORS.map((factor, i) => (
-            <motion.div
-              key={i}
-              aria-hidden="true"
-              className="bg-gold-light w-[3px] rounded-full opacity-80"
-              animate={{
-                height:
-                  phase === 'speaking'
-                    ? `${Math.max(4, clampedVolume * 22 * factor)}px`
-                    : phase === 'listening'
-                      ? '4px'
-                      : '2px',
-              }}
-              transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-            />
-          ))}
+      {/* Integrierter LiveKit-Audio-Visualizer während der Session (Sektion 5).
+          Nur bei vorhandenem LiveKit-Audiotrack; die Deepgram-Engine liefert
+          keinen Track und treibt den Orb rein über Phase + Lautstärke. */}
+      {isConnected && audioTrack && (
+        <div className="pointer-events-none absolute bottom-[-6%] left-1/2 z-20 -translate-x-1/2">
+          <AgentAudioVisualizerBar
+            size="sm"
+            barCount={5}
+            state={PHASE_TO_AGENT_STATE[phase]}
+            color="#C9B8FF"
+            audioTrack={audioTrack}
+            className="text-gold-light opacity-80"
+          />
         </div>
       )}
     </div>
@@ -264,7 +269,8 @@ export function CloserOrb({ phase, volume, isConnected = false, className }: Clo
 }
 
 /**
- * Rein CSS-basierter Ersatz-Orb.
+ * Rein CSS-basierter Ersatz-Orb, damit die Bühne auch ohne Bilddatei
+ * hochwertig aussieht (Sektion 4).
  */
 function OrbFallback() {
   return (
@@ -273,15 +279,17 @@ function OrbFallback() {
         className="absolute inset-0 rounded-full"
         style={{
           background:
-            'radial-gradient(circle at 35% 28%, #ffe9b0 0%, #f3d58a 20%, #d4a63a 52%, #8a6420 82%, #3a2a0c 100%)',
+            'radial-gradient(circle at 35% 28%, #eae0ff 0%, #c9b8ff 20%, #8b6cff 52%, #5a3fd6 82%, #1a1338 100%)',
           boxShadow:
-            '0 20px 60px rgba(0,0,0,0.6), inset -18px -22px 50px rgba(58,42,12,0.65), inset 14px 16px 40px rgba(255,233,176,0.55)',
+            '0 20px 60px rgba(0,0,0,0.6), inset -18px -22px 50px rgba(26,19,56,0.65), inset 14px 16px 40px rgba(201,184,255,0.55)',
         }}
       />
+      {/* Angedeutete Sonnenbrille */}
       <div className="absolute top-[40%] left-1/2 flex -translate-x-1/2 gap-2">
         <div className="h-5 w-8 rounded-md bg-black/85 shadow-inner md:h-8 md:w-14" />
         <div className="h-5 w-8 rounded-md bg-black/85 shadow-inner md:h-8 md:w-14" />
       </div>
+      {/* Glanzlicht */}
       <div className="absolute top-[16%] left-[24%] h-[16%] w-[16%] rounded-full bg-white/50 blur-md" />
     </div>
   );

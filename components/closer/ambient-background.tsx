@@ -26,19 +26,19 @@ export function AmbientBackground({ className }: AmbientBackgroundProps) {
         className
       )}
     >
-      {/* Warmes radiales Goldlicht, oben links */}
+      {/* Weiches Iris-Licht, oben links */}
       <div
         className="absolute -top-1/3 -left-1/4 h-[120vh] w-[120vh] rounded-full opacity-70 blur-3xl"
         style={{
           background:
-            'radial-gradient(circle, rgba(212,166,58,0.16) 0%, rgba(212,166,58,0.05) 35%, transparent 70%)',
+            'radial-gradient(circle, rgba(139,108,255,0.18) 0%, rgba(139,108,255,0.05) 35%, transparent 70%)',
         }}
       />
-      {/* Zweiter, kühlerer Lichtkegel rechts unten für Tiefe */}
+      {/* Zweiter, cyanfarbener Lichtkegel rechts unten für Tiefe */}
       <div
         className="absolute -right-1/4 -bottom-1/3 h-[100vh] w-[100vh] rounded-full opacity-50 blur-3xl"
         style={{
-          background: 'radial-gradient(circle, rgba(138,100,32,0.14) 0%, transparent 65%)',
+          background: 'radial-gradient(circle, rgba(53,229,255,0.12) 0%, transparent 65%)',
         }}
       />
 
@@ -51,12 +51,12 @@ export function AmbientBackground({ className }: AmbientBackgroundProps) {
       >
         <defs>
           <linearGradient id="closer-chart-line" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#8a6420" />
-            <stop offset="50%" stopColor="#f3d58a" />
-            <stop offset="100%" stopColor="#d4a63a" />
+            <stop offset="0%" stopColor="#5a3fd6" />
+            <stop offset="50%" stopColor="#c9b8ff" />
+            <stop offset="100%" stopColor="#35e5ff" />
           </linearGradient>
           <pattern id="closer-grid" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M60 0 L0 0 0 60" fill="none" stroke="#d4a63a" strokeWidth="0.5" />
+            <path d="M60 0 L0 0 0 60" fill="none" stroke="#8b6cff" strokeWidth="0.5" />
           </pattern>
         </defs>
         <rect width="1200" height="800" fill="url(#closer-grid)" />

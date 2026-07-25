@@ -41,11 +41,18 @@ describe('CLOSER-Konfiguration', () => {
     expect(config.greeting).toContain('CLOSER');
   });
 
-  it('hat austauschbare Modell- und Stimmenwerte', () => {
-    expect(config.llm.model.length).toBeGreaterThan(0);
-    expect(config.stt.model.length).toBeGreaterThan(0);
-    expect(config.tts.model.length).toBeGreaterThan(0);
-    expect(config.tts.voice.length).toBeGreaterThan(0);
+  it('hat eine gültige Pipeline und austauschbare Modelle/Stimmen', () => {
+    expect(['inference', 'providers']).toContain(config.pipeline);
+    // Inference-Pipeline
+    expect(config.inference.llm.length).toBeGreaterThan(0);
+    expect(config.inference.stt.length).toBeGreaterThan(0);
+    expect(config.inference.tts.length).toBeGreaterThan(0);
+    expect(config.inference.ttsVoice.length).toBeGreaterThan(0);
+    // Anbieter-Pipeline (Deepgram + OpenAI)
+    expect(config.providers.llm.length).toBeGreaterThan(0);
+    expect(config.providers.stt.length).toBeGreaterThan(0);
+    expect(['openai', 'deepgram']).toContain(config.providers.ttsProvider);
+    expect(config.providers.openaiTtsVoice.length).toBeGreaterThan(0);
   });
 });
 
