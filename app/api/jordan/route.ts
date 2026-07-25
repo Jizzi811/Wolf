@@ -1,13 +1,25 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-/** Maps human-readable voice display names to Deepgram model slugs. */
+/**
+ * Maps a voice display name or slug to a valid Deepgram TTS model slug.
+ *
+ * WICHTIG: Deutsche Deepgram-Stimmen gibt es nur in Aura-2 (Format
+ * `aura-2-<name>-<sprache>`). Ein Slug wie `aura-julius-de` existiert NICHT und
+ * führt zu einem TTS-Fehler (= keine Stimme).
+ */
 function resolveVoice(raw: string | undefined): string {
-  if (!raw) return 'aura-julius-de';
+  const fallback = 'aura-2-julius-de';
+  if (!raw) return fallback;
+  const trimmed = raw.trim();
+  // Bereits ein Deepgram-Slug (z. B. aus dem Playground)? Direkt verwenden.
+  if (trimmed.toLowerCase().startsWith('aura-')) {
+    return trimmed.toLowerCase();
+  }
   const map: Record<string, string> = {
-    'aura 2 - julius (german, masculine)': 'aura-julius-de',
-    'aura-julius-de': 'aura-julius-de',
+    'aura 2 - julius (german, masculine)': 'aura-2-julius-de',
+    'aura-2-julius-de': 'aura-2-julius-de',
   };
-  return map[raw.toLowerCase().trim()] ?? 'aura-julius-de';
+  return map[trimmed.toLowerCase()] ?? fallback;
 }
 
 const JORDAN_SYSTEM_PROMPT = `Du bist Jordan Belfort, der Wolf of Wall Street – kompromisslos, charismatisch und aggressiv motivierend.
@@ -48,7 +60,8 @@ export async function POST(req: NextRequest) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama3-70b-8192',
+      // llama3-70b-8192 wurde von Groq abgeschaltet -> aktuelles Modell nutzen.
+      model: process.env.GROQ_MODEL?.trim() || 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: JORDAN_SYSTEM_PROMPT },
         ...history.slice(-10),
