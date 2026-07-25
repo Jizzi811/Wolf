@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.github
+npm-debug.log*
+Dockerfile
+.dockerignore
+.env
+.env.*
+!.env.example
+voice-agent/node_modules
+voice-agent/dist
+README.md
+SETUP-CLOSER.md
+TEMPLATE.md
