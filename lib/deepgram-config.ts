@@ -21,7 +21,7 @@ export const DG_SAMPLE_RATE = 24000;
 
 /** Standardbegrüßung (identisch zum LiveKit-Backend, Sektion 11). */
 export const CLOSER_GREETING =
-  'Da bist du ja. Ich bin CLOSER, Johanns digitaler Gesprächspartner. Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?';
+  'So, da bist du. Ich bin CLOSER, dein sprechender Host im System. Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?';
 
 /**
  * Baut die Settings für den Deepgram Voice Agent (Sektion 12).

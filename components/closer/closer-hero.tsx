@@ -69,7 +69,7 @@ export function CloserHero({ phase, starting, onStart }: CloserHeroProps) {
           size="lg"
           onClick={onStart}
           disabled={connecting || isConnected}
-          className="from-gold-light to-gold text-primary-foreground hover:from-gold hover:to-gold-dark h-12 w-full rounded-full bg-gradient-to-b px-8 font-mono text-xs font-bold tracking-wider uppercase shadow-[0_8px_30px_rgba(212,166,58,0.35)] transition-all disabled:opacity-70 sm:w-auto"
+          className="from-gold-light to-gold text-primary-foreground hover:from-gold hover:to-gold-dark h-12 w-full rounded-full bg-gradient-to-b px-8 font-mono text-xs font-bold tracking-wider uppercase shadow-[0_8px_30px_rgba(139,108,255,0.35)] transition-all disabled:opacity-70 sm:w-auto"
         >
           {connecting ? CLOSER_CONTENT.buttons.connecting : CLOSER_CONTENT.buttons.start}
         </Button>

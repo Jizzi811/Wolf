@@ -118,13 +118,13 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
       )}
       style={config.vars}
     >
-      {/* Weicher radialer Goldschein hinter dem Orb (reagiert auf Audio) */}
+      {/* Weicher radialer Iris-Schein hinter dem Orb (reagiert auf Audio) */}
       <motion.div
         aria-hidden="true"
         className="absolute inset-0 rounded-full blur-2xl"
         style={{
           background:
-            'radial-gradient(circle, rgba(243,213,138,0.55) 0%, rgba(212,166,58,0.28) 40%, transparent 70%)',
+            'radial-gradient(circle, rgba(201,184,255,0.55) 0%, rgba(139,108,255,0.28) 40%, transparent 70%)',
         }}
         animate={{ opacity: glowOpacity, scale: glowScale }}
         transition={{ type: 'spring', stiffness: 120, damping: 18 }}
@@ -134,7 +134,7 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
       <div
         aria-hidden="true"
         className="closer-anim-halo-pulse border-gold/30 absolute inset-[6%] rounded-full border"
-        style={{ boxShadow: '0 0 60px rgba(212,166,58,0.25) inset' }}
+        style={{ boxShadow: '0 0 60px rgba(139,108,255,0.25) inset' }}
       />
       <div
         aria-hidden="true"
@@ -147,7 +147,7 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
           className="absolute inset-0 rounded-full"
           style={{
             background:
-              'conic-gradient(from 0deg, transparent 0deg, rgba(243,213,138,0.5) 40deg, transparent 90deg)',
+              'conic-gradient(from 0deg, transparent 0deg, rgba(201,184,255,0.5) 40deg, transparent 90deg)',
             opacity: phase === 'connecting' ? 0.9 : 0.35,
             maskImage:
               'radial-gradient(circle, transparent 62%, black 64%, black 66%, transparent 68%)',
@@ -182,7 +182,7 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
               style={{
                 marginLeft: '-4px',
                 marginTop: '-4px',
-                boxShadow: '0 0 10px rgba(243,213,138,0.9)',
+                boxShadow: '0 0 10px rgba(201,184,255,0.9)',
                 animationDelay: `${i * -1.5}s`,
               }}
             />
@@ -237,14 +237,14 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
           className="absolute inset-0 rounded-[50%]"
           style={{
             background:
-              'radial-gradient(ellipse at center, rgba(243,213,138,0.25) 0%, rgba(212,166,58,0.08) 45%, transparent 70%)',
+              'radial-gradient(ellipse at center, rgba(201,184,255,0.25) 0%, rgba(139,108,255,0.08) 45%, transparent 70%)',
           }}
         />
         <div
           className="closer-anim-halo-rotate absolute inset-x-[10%] top-1/2 h-[2px] -translate-y-1/2 rounded-full"
           style={{
             background:
-              'linear-gradient(to right, transparent, rgba(243,213,138,0.6), transparent)',
+              'linear-gradient(to right, transparent, rgba(201,184,255,0.6), transparent)',
           }}
         />
       </div>
@@ -258,7 +258,7 @@ export function CloserOrb({ phase, volume, audioTrack, isConnected, className }:
             size="sm"
             barCount={5}
             state={PHASE_TO_AGENT_STATE[phase]}
-            color="#F3D58A"
+            color="#C9B8FF"
             audioTrack={audioTrack}
             className="text-gold-light opacity-80"
           />
@@ -279,9 +279,9 @@ function OrbFallback() {
         className="absolute inset-0 rounded-full"
         style={{
           background:
-            'radial-gradient(circle at 35% 28%, #ffe9b0 0%, #f3d58a 20%, #d4a63a 52%, #8a6420 82%, #3a2a0c 100%)',
+            'radial-gradient(circle at 35% 28%, #eae0ff 0%, #c9b8ff 20%, #8b6cff 52%, #5a3fd6 82%, #1a1338 100%)',
           boxShadow:
-            '0 20px 60px rgba(0,0,0,0.6), inset -18px -22px 50px rgba(58,42,12,0.65), inset 14px 16px 40px rgba(255,233,176,0.55)',
+            '0 20px 60px rgba(0,0,0,0.6), inset -18px -22px 50px rgba(26,19,56,0.65), inset 14px 16px 40px rgba(201,184,255,0.55)',
         }}
       />
       {/* Angedeutete Sonnenbrille */}

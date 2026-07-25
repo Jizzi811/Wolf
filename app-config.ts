@@ -41,9 +41,10 @@ export interface AppConfig {
  * aktiviert werden.
  */
 export const APP_CONFIG_DEFAULTS: AppConfig = {
-  companyName: 'KickstarterCash.club',
-  pageTitle: 'CLOSER – Der Voice Agent von KickstarterCash.club',
-  pageDescription: 'Ein charismatischer KI-Gesprächspartner für Business, Motivation und Klartext.',
+  companyName: 'CLOSER OS',
+  pageTitle: 'CLOSER OS – Deine Welt. Deine KI.',
+  pageDescription:
+    'Ein sprachgesteuertes persönliches KI-Betriebssystem mit einem männlichen Host: schlagfertig, psychologisch klug, immer Klartext.',
 
   // Voice-only: Text-Chat bleibt aktiv, Kamera und Screen Sharing sind aus.
   supportsChatInput: true,
@@ -55,16 +56,16 @@ export const APP_CONFIG_DEFAULTS: AppConfig = {
   logo: '/johann-orb.png',
   logoDark: '/johann-orb.png',
 
-  // Gold-Akzent passend zur KickstarterCash-Ästhetik.
-  accent: '#D4A63A',
-  accentDark: '#D4A63A',
+  // Iris/Violett-Akzent passend zur dunklen AI-OS-Ästhetik.
+  accent: '#8B6CFF',
+  accentDark: '#8B6CFF',
 
-  startButtonText: 'Gespräch starten',
+  startButtonText: 'Sprechen',
 
-  // Audio-Visualizer: dezente Balken in warmem Gold (reagiert auf die Stimme).
+  // Audio-Visualizer: dezente Balken in Iris/Cyan (reagiert auf die Stimme).
   audioVisualizerType: 'bar',
-  audioVisualizerColor: '#D4A63A',
-  audioVisualizerColorDark: '#F3D58A',
+  audioVisualizerColor: '#8B6CFF',
+  audioVisualizerColorDark: '#C9B8FF',
   audioVisualizerBarCount: 5,
 
   // Agent-Dispatch: Name des LiveKit-Agenten (muss zum Backend passen).

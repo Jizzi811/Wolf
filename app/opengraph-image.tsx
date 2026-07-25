@@ -26,16 +26,16 @@ export default function Image() {
           flexDirection: 'column',
           justifyContent: 'center',
           padding: '80px',
-          backgroundColor: '#0a0a0c',
+          backgroundColor: '#08070d',
           backgroundImage:
-            'radial-gradient(circle at 78% 30%, rgba(212,166,58,0.35) 0%, rgba(10,10,12,0) 45%)',
+            'radial-gradient(circle at 78% 30%, rgba(139,108,255,0.35) 0%, rgba(8,7,13,0) 45%)',
         }}
       >
         <div
           style={{
             fontSize: 22,
             letterSpacing: 6,
-            color: '#d4a63a',
+            color: '#8b6cff',
             fontWeight: 700,
           }}
         >
@@ -46,22 +46,22 @@ export default function Image() {
             marginTop: 28,
             fontSize: 92,
             lineHeight: 1.02,
-            color: '#f2ead6',
+            color: '#ece9fb',
             fontWeight: 700,
             maxWidth: 900,
           }}
         >
-          Triff CLOSER.
+          {CLOSER_CONTENT.heading.line1}
         </div>
         <div
           style={{
             marginTop: 20,
             fontSize: 34,
-            color: '#a89f8b',
+            color: '#9c96c4',
             maxWidth: 820,
           }}
         >
-          Charme im Anzug. Klartext im Kopf.
+          {CLOSER_CONTENT.heading.line2}
         </div>
       </div>
     ),

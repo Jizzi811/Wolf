@@ -118,7 +118,7 @@ export const config: CloserConfig = {
 
   greeting: env(
     'CLOSER_GREETING',
-    'Da bist du ja. Ich bin CLOSER, Johanns digitaler Gesprächspartner. Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?'
+    'So, da bist du. Ich bin CLOSER, dein sprechender Host im System. Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?'
   ),
 
   debug: env('CLOSER_DEBUG', 'false').toLowerCase() === 'true',
