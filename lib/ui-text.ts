@@ -10,35 +10,35 @@ import type { CloserState } from '@/lib/closer-state';
 
 export const uiText = {
   /** Kleines Label über der Hauptüberschrift. */
-  eyebrow: 'KICKSTARTERCASH.CLUB PRESENTS',
+  eyebrow: 'LIVE AUS RHEINLAND-PFLANZ',
 
   /** Hauptüberschrift, bewusst zweizeilig. */
-  heroTitleLine1: 'Triff CLOSER.',
-  heroTitleLine2: 'Charme im Anzug. Klartext im Kopf.',
+  heroTitleLine1: 'Triff Slav.',
+  heroTitleLine2: 'Verklatscht im Kopf. Toast in der Hand.',
 
   /** Kurzbeschreibung im Hero-Bereich. */
   heroDescription:
-    'Ein Voice Agent für Business, Motivation und Gespräche ohne langweiliges Assistenten-Gelaber. Schlagfertig, psychologisch klug und immer bereit, den entscheidenden Punkt zu finden.',
+    'Ein alberner Voice Agent: Reporter Slav aus Rheinland-Pflanz berichtet live von seiner riesengroßen Toastmaschine, tratscht harmlos vor sich hin und hat ab und zu charmante Wortfindungsschwierigkeiten.',
 
   /** Buttons rund um die Session. */
-  buttonStart: 'Gespräch starten',
-  buttonConnecting: 'Verbindung wird aufgebaut …',
-  buttonEnd: 'Gespräch beenden',
+  buttonStart: 'Sendung starten',
+  buttonConnecting: 'Toaster wird angeworfen …',
+  buttonEnd: 'Sendung beenden',
 
   /** Drei kurze Merkmale unter dem Startbutton. */
-  features: ['Psychologisch klug', 'Trocken im Humor', 'Gefährlich gut im Klartext'] as const,
+  features: ['Total verklatscht', 'Reporter mit Herz', 'Toastmaschine inklusive'] as const,
 
   /** Dezenter Datenschutzhinweis im Hero. */
   privacyNote:
     'Teile im Gespräch keine Passwörter, PINs oder vollständigen Karten- und Zugangsdaten.',
 
   /** Name und kurzer Untertitel des Agenten. */
-  agentName: 'CLOSER',
-  agentTagline: 'Johanns digitaler Gesprächspartner',
+  agentName: 'SLAV',
+  agentTagline: 'Reporter aus Rheinland-Pflanz',
 
   /** Footer-Disclaimer. */
   footer:
-    'CLOSER ist ein KI-gestützter Gesprächspartner von KickstarterCash.club und keine reale Person. Finanzielle, rechtliche und steuerliche Entscheidungen sollten eigenständig geprüft werden.',
+    'SLAV ist eine fiktive KI-Comedy-Figur und keine reale Person. Sein „Klatsch" ist frei erfunden und bezieht sich nicht auf echte Menschen oder Ereignisse.',
 
   /** Bedienhinweise / ARIA-Beschriftungen. */
   controls: {
@@ -50,7 +50,7 @@ export const uiText = {
     openTranscript: 'Transkript öffnen',
     closeTranscript: 'Transkript schließen',
     transcriptTitle: 'Gesprächsverlauf',
-    textInputPlaceholder: 'Nachricht an CLOSER …',
+    textInputPlaceholder: 'Nachricht an Slav …',
     sendMessage: 'Nachricht senden',
     startAudio: 'Ton aktivieren',
     startAudioHint: 'Tippe hier, um die Audiowiedergabe in deinem Browser zu starten.',
@@ -59,10 +59,10 @@ export const uiText = {
   /** Status-Zeile unter dem Orb, abhängig vom Agentenzustand. */
   status: {
     disconnected: 'Bereit, wenn du es bist.',
-    connecting: 'Verbindung wird aufgebaut …',
-    listening: 'CLOSER hört zu',
-    thinking: 'CLOSER denkt nach',
-    speaking: 'CLOSER spricht',
+    connecting: 'Toaster wird angeworfen …',
+    listening: 'Slav hört zu',
+    thinking: 'Slav sucht das Wort …',
+    speaking: 'Slav berichtet',
   } satisfies Record<CloserState, string>,
 
   /** Nutzerfreundliche Fehlermeldungen – niemals technische Rohfehler zeigen. */
@@ -74,7 +74,7 @@ export const uiText = {
     connectionError:
       'Die Verbindung ist fehlgeschlagen. Prüfe deine Internetverbindung und versuche es gleich noch einmal.',
     agentUnreachable:
-      'CLOSER ist gerade nicht erreichbar. Bitte versuche es in einem Moment noch einmal.',
+      'Slav ist gerade nicht am Mikrofon. Bitte versuche es in einem Moment noch einmal.',
     sessionEnded: 'Das Gespräch wurde unerwartet beendet. Du kannst jederzeit neu starten.',
     browserUnsupported:
       'Dein Browser unterstützt die benötigten Audiofunktionen leider nicht. Versuche es mit einem aktuellen Chrome, Edge, Firefox oder Safari.',

@@ -30,20 +30,22 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG: AppConfig = {
-  companyName: 'KickstarterCash.club',
-  productName: 'CLOSER',
+  companyName: 'Rheinland-Pflanz',
+  productName: 'SLAV',
 
-  pageTitle: 'CLOSER – Der Voice Agent von KickstarterCash.club',
+  pageTitle: 'SLAV – Der total verklatschte Reporter aus Rheinland-Pflanz',
   pageDescription:
-    'Ein charismatischer KI-Gesprächspartner für Business, Motivation und Klartext.',
+    'Ein alberner Voice Agent: Reporter Slav berichtet live von seiner riesengroßen Toastmaschine.',
 
-  accent: '#D4A63A',
+  accent: '#E8A54B',
   themeColor: '#0A0A0B',
 
-  startButtonText: 'Gespräch starten',
+  startButtonText: 'Sendung starten',
 
   supportsChatInput: true,
 
+  // Platzhalter-Orb. Für Slav am besten das Porträt aus dem Upload als Bild
+  // unter public/ ablegen und diesen Pfad darauf zeigen lassen.
   orbImageSrc: '/johann-orb.png',
-  orbAltText: 'Goldener Orb mit Sonnenbrille, Hut und Anzug – die Figur von CLOSER.',
+  orbAltText: 'Orb mit dem Porträt von Reporter Slav – der alberne Reporter aus Rheinland-Pflanz.',
 };
