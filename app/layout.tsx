@@ -1,108 +1,57 @@
 import type { Metadata, Viewport } from 'next';
-import { Public_Sans } from 'next/font/google';
-import localFont from 'next/font/local';
-import { headers } from 'next/headers';
-import { ThemeProvider } from '@/components/app/theme-provider';
-import { cn } from '@/lib/shadcn/utils';
-import { getAppConfig, getStyles } from '@/lib/utils';
-import '@/styles/globals.css';
+import { APP_CONFIG } from '@/app-config';
+import { AmbientBackground } from '@/components/closer/ambient-background';
+import './globals.css';
 
-const publicSans = Public_Sans({
-  variable: '--font-public-sans',
-  subsets: ['latin'],
-});
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closer.kickstartercash.club';
 
-const commitMono = localFont({
-  display: 'swap',
-  variable: '--font-commit-mono',
-  src: [
-    {
-      path: '../fonts/CommitMono-400-Regular.otf',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/CommitMono-700-Regular.otf',
-      weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/CommitMono-400-Italic.otf',
-      weight: '400',
-      style: 'italic',
-    },
-    {
-      path: '../fonts/CommitMono-700-Italic.otf',
-      weight: '700',
-      style: 'italic',
-    },
-  ],
-});
-
-export async function generateMetadata(): Promise<Metadata> {
-  const hdrs = await headers();
-  const appConfig = await getAppConfig(hdrs);
-
-  return {
-    title: appConfig.pageTitle,
-    description: appConfig.pageDescription,
-    applicationName: appConfig.companyName,
-    openGraph: {
-      title: appConfig.pageTitle,
-      description: appConfig.pageDescription,
-      siteName: appConfig.companyName,
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: appConfig.pageTitle,
-      description: appConfig.pageDescription,
-    },
-  };
-}
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: APP_CONFIG.pageTitle,
+  description: APP_CONFIG.pageDescription,
+  applicationName: APP_CONFIG.productName,
+  authors: [{ name: APP_CONFIG.companyName }],
+  openGraph: {
+    title: APP_CONFIG.pageTitle,
+    description: APP_CONFIG.pageDescription,
+    siteName: APP_CONFIG.companyName,
+    locale: 'de_DE',
+    type: 'website',
+    // Platzhalter-Grafik – bei Bedarf durch finales Marken-OG-Bild ersetzen.
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'CLOSER' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: APP_CONFIG.pageTitle,
+    description: APP_CONFIG.pageDescription,
+    images: ['/og-image.png'],
+  },
+};
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0c',
+  themeColor: APP_CONFIG.themeColor,
   colorScheme: 'dark',
 };
 
-interface RootLayoutProps {
-  children: React.ReactNode;
-}
-
-export default async function RootLayout({ children }: RootLayoutProps) {
-  const hdrs = await headers();
-  const appConfig = await getAppConfig(hdrs);
-  const styles = getStyles(appConfig);
-  const { companyName } = appConfig;
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="de"
-      suppressHydrationWarning
-      className={cn(
-        publicSans.variable,
-        commitMono.variable,
-        'scroll-smooth font-sans antialiased'
-      )}
-    >
-      <head>{styles && <style>{styles}</style>}</head>
-      <body className="overflow-x-hidden">
-        {/* CLOSER ist bewusst dunkel gehalten – Theme fest auf "dark". */}
-        <ThemeProvider
-          attribute="class"
-          forcedTheme="dark"
-          defaultTheme="dark"
-          disableTransitionOnChange
-        >
-          <header className="fixed top-0 left-0 z-40 hidden w-full flex-row justify-between p-6 md:flex">
-            <span className="text-gold font-mono text-xs font-bold tracking-[0.2em] uppercase">
-              {companyName}
-            </span>
-          </header>
-
-          {children}
-        </ThemeProvider>
+    <html lang="de" suppressHydrationWarning>
+      <head>
+        {/* Schriften über <link> (Browser-Laufzeit) – vermeidet Build-Zeit-Abhängigkeit. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Schriften via <link> statt next/font, um einen Build-Zeit-Download von
+            Google Fonts zu vermeiden (in abgeschotteten Build-Umgebungen sonst
+            fehleranfällig). Der Browser lädt sie zur Laufzeit mit Fallbacks. */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-svh antialiased">
+        <AmbientBackground />
+        {children}
       </body>
     </html>
   );
