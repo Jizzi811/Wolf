@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type Vapi from '@vapi-ai/web';
-import { buildCloserAssistant } from '@/lib/closer/assistant';
+import { buildActiveAssistant } from '@/lib/active-persona';
 import { type CloserState } from '@/lib/closer-state';
 import { classifyError, isVoiceSupported, type CloserErrorKey } from '@/lib/errors';
 
@@ -147,7 +147,7 @@ export function useVapi(): UseVapiReturn {
       if (ASSISTANT_ID) {
         await vapiRef.current.start(ASSISTANT_ID);
       } else {
-        await vapiRef.current.start(buildCloserAssistant());
+        await vapiRef.current.start(buildActiveAssistant());
       }
     } catch (err) {
       setErrorKey(classifyError(err));

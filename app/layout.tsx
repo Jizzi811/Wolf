@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     locale: 'de_DE',
     type: 'website',
     // Platzhalter-Grafik – bei Bedarf durch finales Marken-OG-Bild ersetzen.
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'CLOSER' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SLAV' }],
   },
   twitter: {
     card: 'summary_large_image',
