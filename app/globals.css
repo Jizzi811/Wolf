@@ -240,8 +240,12 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    /* Kein kreisförmiger Zuschnitt: Hut und Anzug bleiben sichtbar; die Figur
-       läuft dank transparenter Ränder weich in die Bühne aus. */
+    /* Das Slav-Porträt ist quadratisch mit blau-violettem Hintergrund (passt zur
+       Seitenfarbe). Eine weiche radiale Maske löst nur die Ecken in die Bühne auf,
+       ohne Haarspitzen oder Schultern zu beschneiden – so wirkt die Figur frei-
+       gestellt, bleibt aber 1:1 das Originalbild. */
+    -webkit-mask-image: radial-gradient(circle at 50% 46%, #000 0%, #000 60%, transparent 85%);
+    mask-image: radial-gradient(circle at 50% 46%, #000 0%, #000 60%, transparent 85%);
     user-select: none;
     -webkit-user-drag: none;
   }

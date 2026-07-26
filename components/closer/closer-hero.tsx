@@ -1,14 +1,14 @@
 import { uiText } from '@/lib/ui-text';
 
-/** Kleiner goldener Aufzählungspunkt (Diamant). */
+/** Kleiner violetter Aufzählungspunkt (Diamant). */
 function Bullet() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" className="mt-1 flex-none">
       <path d="M6 0.5 11.5 6 6 11.5 0.5 6z" fill="url(#closer-bullet)" />
       <defs>
         <linearGradient id="closer-bullet" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#F3D58A" />
-          <stop offset="1" stopColor="#D4A63A" />
+          <stop offset="0" stopColor="#A99BFF" />
+          <stop offset="1" stopColor="#7B6CF6" />
         </linearGradient>
       </defs>
     </svg>
