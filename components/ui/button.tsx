@@ -1,61 +1,52 @@
 import * as React from 'react';
-import { type VariantProps, cva } from 'class-variance-authority';
-import { Slot } from 'radix-ui';
-import { cn } from '@/lib/shadcn/utils';
+import { cn } from '@/lib/utils';
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
-  {
-    variants: {
-      variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        destructive:
-          'bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
-        outline:
-          'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
-        link: 'text-primary underline-offset-4 hover:underline',
-      },
-      size: {
-        default: 'h-9 px-4 py-2 has-[>svg]:px-3',
-        xs: "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: 'h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5',
-        lg: 'h-10 rounded-md px-6 has-[>svg]:px-4',
-        icon: 'size-9',
-        'icon-xs': "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
-        'icon-sm': 'size-8',
-        'icon-lg': 'size-10',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
-  }
-);
+type Variant = 'primary' | 'ghost' | 'danger' | 'icon';
+type Size = 'default' | 'lg' | 'icon';
 
-function Button({
-  className,
-  variant = 'default',
-  size = 'default',
-  asChild = false,
-  ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
-  const Comp = asChild ? Slot.Root : 'button';
+const base =
+  'inline-flex items-center justify-center gap-2 rounded-full font-medium ' +
+  'transition-[transform,box-shadow,background,border-color,opacity] duration-200 ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ' +
+  'disabled:pointer-events-none disabled:opacity-55 select-none active:scale-[0.98]';
 
-  return (
-    <Comp
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
+const variants: Record<Variant, string> = {
+  primary:
+    'bg-gradient-to-b from-gold-light to-gold text-ink font-semibold ' +
+    'shadow-[0_10px_30px_-8px_rgba(212,166,58,0.6)] ' +
+    'hover:shadow-[0_14px_40px_-8px_rgba(212,166,58,0.75)] hover:brightness-[1.04]',
+  ghost:
+    'border border-gold/30 bg-white/[0.02] text-cream backdrop-blur-sm ' +
+    'hover:border-gold/60 hover:bg-gold/[0.08]',
+  danger:
+    'border border-danger/45 bg-danger/[0.08] text-danger ' +
+    'hover:bg-danger/15 hover:border-danger/70',
+  icon:
+    'border border-gold/30 bg-white/[0.03] text-cream hover:border-gold/60 hover:bg-gold/[0.1]',
+};
+
+const sizes: Record<Size, string> = {
+  // 44px+ Touch-Fläche
+  default: 'h-11 px-5 text-sm',
+  lg: 'h-14 px-8 text-[0.95rem] tracking-wide',
+  icon: 'h-12 w-12 min-h-11 min-w-11 p-0',
+};
+
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variant;
+  size?: Size;
 }
 
-export { Button, buttonVariants };
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = 'primary', size = 'default', type = 'button', ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(base, variants[variant], sizes[size], className)}
+        {...props}
+      />
+    );
+  }
+);
+Button.displayName = 'Button';

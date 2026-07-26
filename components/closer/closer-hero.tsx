@@ -1,99 +1,86 @@
-'use client';
+import { uiText } from '@/lib/ui-text';
 
-import { CheckIcon, ShieldIcon } from 'lucide-react';
-import { motion } from 'motion/react';
-import { Button } from '@/components/ui/button';
-import type { CloserPhase } from '@/hooks/useCloserState';
-import { CLOSER_CONTENT } from '@/lib/closer-content';
-
-interface CloserHeroProps {
-  phase: CloserPhase;
-  starting: boolean;
-  onStart: () => void;
+/** Kleiner goldener Aufzählungspunkt (Diamant). */
+function Bullet() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" className="mt-1 flex-none">
+      <path d="M6 0.5 11.5 6 6 11.5 0.5 6z" fill="url(#closer-bullet)" />
+      <defs>
+        <linearGradient id="closer-bullet" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#F3D58A" />
+          <stop offset="1" stopColor="#D4A63A" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
 }
 
-const container = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
-  },
-};
+/**
+ * Oberer Hero-Block: Eyebrow, Hauptüberschrift, Kurzbeschreibung.
+ * Auf Mobil steht darunter direkt der Orb.
+ */
+export function CloserHeroHeadline() {
+  return (
+    <div className="flex flex-col">
+      <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-gold/80">
+        {uiText.eyebrow}
+      </p>
 
-const item = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-};
+      <h1 className="mt-5 text-balance text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
+        <span className="block text-cream">{uiText.heroTitleLine1}</span>
+        <span className="mt-2 block bg-gradient-to-r from-gold-light via-gold to-gold-dark bg-clip-text text-transparent">
+          {uiText.heroTitleLine2}
+        </span>
+      </h1>
+
+      <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted sm:text-lg">
+        {uiText.heroDescription}
+      </p>
+    </div>
+  );
+}
+
+interface CloserHeroPitchProps {
+  /** Aktionsbereich (Startbutton bzw. Verbindungs-Button). Optional. */
+  action?: React.ReactNode;
+}
 
 /**
- * Marken-/Hero-Spalte (Sektion 6 & 7). Zeigt Eyebrow, Überschrift,
- * Beschreibung, Merkmale, Startbutton und Datenschutzhinweis. Alle Texte
- * stammen aus `CLOSER_CONTENT`. Einstiegsanimationen mit Framer Motion.
+ * Unterer Hero-Block: Aktionsbereich, drei Merkmale, Datenschutzhinweis.
  */
-export function CloserHero({ phase, starting, onStart }: CloserHeroProps) {
-  const isConnected = phase !== 'idle' && phase !== 'connecting';
-  const connecting = phase === 'connecting' || starting;
-
+export function CloserHeroPitch({ action }: CloserHeroPitchProps) {
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="flex max-w-xl flex-col items-center text-center md:items-start md:text-left"
-    >
-      <motion.span
-        variants={item}
-        className="text-gold font-mono text-[11px] font-bold tracking-[0.22em] uppercase"
-      >
-        {CLOSER_CONTENT.eyebrow}
-      </motion.span>
+    <div className="flex flex-col">
+      {action ? <div className="mb-9">{action}</div> : null}
 
-      <motion.h1
-        variants={item}
-        className="text-cream mt-4 text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl"
-      >
-        <span className="from-gold-light via-gold to-gold-dark bg-gradient-to-br bg-clip-text text-transparent">
-          {CLOSER_CONTENT.heading.line1}
-        </span>
-        <span className="text-cream mt-2 block">{CLOSER_CONTENT.heading.line2}</span>
-      </motion.h1>
-
-      <motion.p
-        variants={item}
-        className="text-cream-muted mt-5 max-w-prose text-base leading-7 text-pretty"
-      >
-        {CLOSER_CONTENT.description}
-      </motion.p>
-
-      <motion.div variants={item} className="mt-8">
-        <Button
-          size="lg"
-          onClick={onStart}
-          disabled={connecting || isConnected}
-          className="from-gold-light to-gold text-primary-foreground hover:from-gold hover:to-gold-dark h-12 w-full rounded-full bg-gradient-to-b px-8 font-mono text-xs font-bold tracking-wider uppercase shadow-[0_8px_30px_rgba(139,108,255,0.35)] transition-all disabled:opacity-70 sm:w-auto"
-        >
-          {connecting ? CLOSER_CONTENT.buttons.connecting : CLOSER_CONTENT.buttons.start}
-        </Button>
-      </motion.div>
-
-      <motion.ul
-        variants={item}
-        className="mt-8 flex flex-col flex-wrap justify-center gap-x-6 gap-y-2 sm:flex-row md:justify-start"
-      >
-        {CLOSER_CONTENT.features.map((feature) => (
-          <li key={feature} className="text-cream flex items-center gap-2 text-sm">
-            <CheckIcon className="text-gold size-4 shrink-0" aria-hidden="true" />
-            {feature}
+      <ul className="flex flex-col gap-3">
+        {uiText.features.map((f) => (
+          <li key={f} className="flex items-start gap-3 text-cream/90">
+            <Bullet />
+            <span className="text-[0.95rem] font-medium">{f}</span>
           </li>
         ))}
-      </motion.ul>
+      </ul>
 
-      <motion.p
-        variants={item}
-        className="text-cream-muted/80 mt-8 flex items-start gap-2 text-xs leading-5"
-      >
-        <ShieldIcon className="text-gold-dark mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-        <span>{CLOSER_CONTENT.privacyNote}</span>
-      </motion.p>
-    </motion.div>
+      <p className="mt-8 flex items-start gap-2 text-xs leading-relaxed text-muted/80">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className="mt-0.5 flex-none text-gold/70"
+        >
+          <path
+            d="M6 10V8a6 6 0 1 1 12 0v2m-9 0h6a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-4a3 3 0 0 1 3-3Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        {uiText.privacyNote}
+      </p>
+    </div>
   );
 }

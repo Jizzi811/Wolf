@@ -1,377 +1,189 @@
-# SETUP-CLOSER
+# SETUP-CLOSER.md
 
-Anleitung für **CLOSER** – den charismatischen Voice Agent von
-**KickstarterCash.club**. CLOSER besteht aus zwei getrennten Teilen:
+Anleitung zum Einrichten, Starten und Bereitstellen von **CLOSER** – dem Voice
+Agent von KickstarterCash.club. Sprach-Engine: **Vapi** (gehostet).
 
-| Teil                 | Ordner         | Technik                                            |
-| -------------------- | -------------- | -------------------------------------------------- |
-| **A – Web-Frontend** | Projektwurzel  | Next.js 15 (App Router) + LiveKit Components React |
-| **B – Voice-Agent**  | `voice-agent/` | LiveKit Agents SDK (Node.js/TypeScript, v1.5)      |
-
-Beide Teile werden **unabhängig** gestartet und deployt. Das Frontend stellt
-die Verbindung her; der Agent liefert Stimme und Intelligenz.
-
-> Diese Anleitung ist für technisch interessierte Personen gedacht, die nicht
-> täglich mit LiveKit arbeiten.
+Die Anleitung richtet sich an eine technisch interessierte Person, die nicht
+täglich mit Voice-Agents arbeitet.
 
 ---
 
-## 0. Zwei Voice-Engines (wichtig zuerst lesen)
+## 1. Überblick
 
-CLOSER kann die „Sprech-Maschine" auf zwei Arten betreiben – umschaltbar über
-`NEXT_PUBLIC_VOICE_ENGINE`:
+CLOSER besteht aus **einer** Anwendung: einem Next.js-Frontend. Die komplette
+Sprachlogik (Zuhören, Denken, Sprechen, Unterbrechen) übernimmt **Vapi** als
+gehosteter Dienst. Es gibt **keinen** separaten Agenten-Prozess, den du
+betreiben musst.
 
-- **`deepgram` (Standard, empfohlen):** Deepgram Voice Agent. Hören + Denken +
-  Sprechen laufen über **eine** Verbindung direkt im Browser. **Kein LiveKit,
-  kein Dauer-Worker, keine zweite App.** Es genügt **ein** Server-Key
-  (`DEEPGRAM_API_KEY`); das LLM (OpenAI/GPT) wird von Deepgram verwaltet und über
-  dein Deepgram-Guthaben abgerechnet. Deutsche Stimme (z. B. „Julius").
-  → Der Ordner `voice-agent/` wird für diesen Weg **nicht** gebraucht.
-- **`livekit`:** die ursprüngliche Architektur mit separatem `voice-agent/`
-  Backend (Abschnitte weiter unten). Nur nötig, wenn du LiveKit brauchst.
-
-### Schnellstart mit der Deepgram-Engine
-
-1. In der App (z. B. Sevalla) Environment-Variablen setzen:
-
-   ```env
-   NEXT_PUBLIC_VOICE_ENGINE=deepgram
-   DEEPGRAM_API_KEY=<dein_deepgram_key>     # nur serverseitig!
-   CLOSER_DG_VOICE=aura-2-julius-de          # exakte deutsche Stimmen-ID
-   CLOSER_DG_LANGUAGE=de
-   CLOSER_DG_THINK_MODEL=gpt-4o-mini
-   ```
-
-2. Deployen. Fertig – „Gespräch starten" verbindet direkt mit Deepgram.
-   Check: `/api/dg-token` liefert ein Token (kein `{"configured":false}`).
-
-> **Sicherheit:** `DEEPGRAM_API_KEY` NUR als normale (nicht `NEXT_PUBLIC_`)
-> Server-Variable setzen. Der Browser erhält ausschließlich ein kurzlebiges
-> Token aus `/api/dg-token`. Schlüssel niemals in Screenshots, Chats oder
-> `.env`-Dateien in fremde Tools kopieren.
-
-### Gehirn (LLM): Deepgram-verwaltet oder Groq
-
-Standardmäßig verwaltet Deepgram das LLM (OpenAI/GPT) und rechnet es über dein
-Deepgram-Guthaben ab – kein weiterer Key nötig. Optional kannst du **Groq**
-(schnell, günstig, großzügiges Freikontingent) als Gehirn nutzen:
-
-```env
-CLOSER_DG_THINK_PROVIDER=groq
-CLOSER_DG_THINK_MODEL=llama-3.3-70b-versatile   # aktuelle Groq-Modell-ID prüfen
-GROQ_API_KEY=<dein_groq_key>                     # bleibt serverseitig!
-GROQ_PROXY_SECRET=<frei-wählbares-geheimnis>     # optionaler Schutz des Proxys
+```
+Browser ──(Vapi Web SDK, öffentlicher Key)──► Vapi (STT · LLM · TTS, gehostet)
 ```
 
-Groq läuft über den Server-Proxy `/api/llm-proxy` – der Groq-Key verlässt den
-Server **nie**. Deepgrams Server rufen den Proxy öffentlich auf; er hängt den
-Key an und leitet an Groq weiter. Modell-IDs ändern sich – die aktuelle Liste
-steht in der Groq-Konsole.
-
-> Hinweis: `GROQ_PROXY_SECRET` ist ein leichter Schutz (der Wert ist im Browser
-> sichtbar). Der eigentliche Schutz ist, dass der Groq-Key serverseitig bleibt.
+Der CLOSER-„Charakter" (Persönlichkeit, Begrüßung, Modelle, Stimme) wird im Code
+als transienter Vapi-Assistent definiert: `lib/closer/assistant.ts`. Alternativ
+kannst du einen Assistenten im Vapi-Dashboard anlegen und nur dessen ID setzen.
 
 ---
 
-## 1. Voraussetzungen
+## 2. Voraussetzungen
 
-- **Node.js**
-  - Frontend: Node ≥ 20 (getestet mit Node 22).
-  - Voice-Agent: **Node ≥ 24** (das Agent-SDK nutzt Nodes natives
-    TypeScript-Stripping, `node src/main.ts`).
-- **pnpm** ≥ 9 fürs Frontend, **pnpm ≥ 10** empfohlen für den Voice-Agent.
-- Ein **LiveKit-Cloud-Projekt** (kostenlos): <https://cloud.livekit.io>
-  – daraus stammen `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`.
-- Ein Mikrofon und ein moderner Browser (Chrome, Edge, Firefox, Safari).
+- **Node.js ≥ 20** (empfohlen 20 oder 22). Prüfen: `node -v`
+- **pnpm** (empfohlen) – `npm i -g pnpm` – oder `npm`.
+- Ein **Vapi-Konto** (<https://vapi.ai>) mit:
+  - einem **öffentlichen** API-Key (Public Key),
+  - konfigurierten Provider-Keys **im Vapi-Dashboard** (OpenAI für das LLM,
+    Deepgram für STT, optional ElevenLabs für Premium-Stimmen) – oder Vapi-Guthaben.
+
+> Wichtig: Die Provider-Schlüssel liegen **im Vapi-Dashboard**, nicht in dieser
+> App. Im Browser wird ausschließlich der öffentliche Vapi-Key verwendet.
 
 ---
 
-## 2. Installation
+## 3. Installation
 
 ```bash
-# Frontend (Projektwurzel)
 pnpm install
-
-# Voice-Agent
-cd voice-agent
-pnpm install
-cd ..
 ```
 
 ---
 
-## 3. Frontend starten
+## 4. Environment-Variablen setzen
 
 ```bash
-# In der Projektwurzel
-cp .env.example .env.local     # Werte eintragen (siehe Abschnitt 6)
+cp .env.example .env.local
+```
+
+Mindestens setzen:
+
+```
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=<dein_oeffentlicher_vapi_key>
+```
+
+Optional:
+
+```
+# Wenn du einen Assistenten im Vapi-Dashboard pflegst, hier dessen ID setzen.
+# Leer = App baut den CLOSER-Assistenten aus lib/closer/assistant.ts (empfohlen).
+NEXT_PUBLIC_VAPI_ASSISTANT_ID=
+
+# Absolute Basis-URL für korrekte Open-Graph-Vorschau.
+NEXT_PUBLIC_SITE_URL=
+```
+
+---
+
+## 5. Vapi einrichten
+
+1. Konto auf <https://vapi.ai> anlegen.
+2. Unter **API Keys** den **Public Key** kopieren → `NEXT_PUBLIC_VAPI_PUBLIC_KEY`.
+3. Unter **Provider Keys** deine Anbieter verbinden (mindestens OpenAI für das
+   LLM und Deepgram für die Transkription; optional ElevenLabs für die Stimme) –
+   oder Vapi-Guthaben nutzen.
+4. **Optional:** einen Assistenten im Dashboard anlegen und `NEXT_PUBLIC_VAPI_ASSISTANT_ID`
+   setzen. Ohne ID nutzt die App automatisch den in `lib/closer/assistant.ts`
+   definierten CLOSER-Assistenten (empfohlen für den Start).
+
+---
+
+## 6. Lokal starten
+
+```bash
 pnpm dev
+# http://localhost:3000
 ```
 
-Dann <http://localhost:3000> öffnen. Ohne laufenden Voice-Agent baut die Seite
-zwar die Verbindung auf, es meldet sich aber niemand.
-
----
-
-## 4. Voice Agent starten
-
-```bash
-cd voice-agent
-cp .env.example .env.local     # Werte eintragen (siehe Abschnitt 6)
-pnpm dev                       # Entwicklungs-Modus (verbindet sich mit LiveKit Cloud)
-```
-
-Für den Dauerbetrieb:
-
-```bash
-pnpm start
-```
-
-> Der Agent ist ein **langlebiger Prozess** und läuft bewusst getrennt vom
-> Next.js-Frontend – nicht in einer Next.js-API-Route.
-
----
-
-## 5. LiveKit-Projekt verbinden
-
-1. In der [LiveKit Cloud Console](https://cloud.livekit.io) ein Projekt
-   erstellen bzw. auswählen.
-2. Unter **Settings → Keys** einen API-Key erzeugen.
-3. `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` in **beiden**
-   `.env.local`-Dateien (Frontend + `voice-agent/`) eintragen.
-4. `AGENT_NAME` in beiden Dateien identisch setzen (Standard: `CLOSER`) für
-   expliziten Dispatch – oder in beiden leer lassen für automatischen Dispatch.
-
-Für die **KI** (Hören/Denken/Sprechen) gibt es zwei Wege: eigene Anbieter
-(Deepgram + OpenAI, empfohlen und günstig) oder LiveKit Inference. Details in
-Abschnitt 10. LiveKit selbst wird in beiden Fällen als **Audiotransport**
-benötigt.
-
----
-
-## 6. Environment-Variablen setzen
-
-### Frontend – `.env.local` (aus `.env.example`)
-
-| Variable                          | Zweck                                                       |
-| --------------------------------- | ----------------------------------------------------------- |
-| `LIVEKIT_URL`                     | WebSocket-URL des LiveKit-Projekts (serverseitig)           |
-| `LIVEKIT_API_KEY`                 | API-Key (serverseitig, für die Token-Route)                 |
-| `LIVEKIT_API_SECRET`              | API-Secret (serverseitig)                                   |
-| `AGENT_NAME`                      | Dispatch-Name; muss zum Voice-Agent passen (z. B. `CLOSER`) |
-| `NEXT_PUBLIC_APP_CONFIG_ENDPOINT` | Nur für die LiveKit Cloud Sandbox (sonst leer)              |
-| `SANDBOX_ID`                      | Nur für die Sandbox (sonst leer)                            |
-
-### Voice-Agent – `voice-agent/.env.local` (aus `voice-agent/.env.example`)
-
-| Variable                    | Zweck                                                          |
-| --------------------------- | -------------------------------------------------------------- |
-| `LIVEKIT_URL`               | WebSocket-URL des LiveKit-Projekts (nur Audiotransport)        |
-| `LIVEKIT_API_KEY`           | API-Key                                                        |
-| `LIVEKIT_API_SECRET`        | API-Secret                                                     |
-| `AGENT_NAME`                | Agentenname / Dispatch-Name (Standard `CLOSER`)                |
-| `CLOSER_PIPELINE`           | `providers` oder `inference` (leer = automatisch, siehe unten) |
-| `DEEPGRAM_API_KEY`          | Deepgram: Hören (STT) und optional Stimme (TTS)                |
-| `OPENAI_API_KEY`            | OpenAI: Denken (LLM/GPT) und Standard-Stimme (TTS)             |
-| `CLOSER_TTS_PROVIDER`       | `openai` (Deutsch, Standard) oder `deepgram`                   |
-| `CLOSER_TTS_VOICE`          | OpenAI-Stimme (z. B. `onyx`, `ash`, `sage`)                    |
-| `CLOSER_DEEPGRAM_TTS_MODEL` | Deepgram-Stimme (exakte Modell-ID, z. B. deutsche Aura-2)      |
-| `CLOSER_LLM_MODEL`          | Optional: LLM-Modell überschreiben                             |
-| `CLOSER_STT_MODEL`          | Optional: STT-Modell überschreiben                             |
-| `CLOSER_LANGUAGE`           | Optional: Standardsprache (Standard `de`)                      |
-| `CLOSER_GREETING`           | Optional: Begrüßungstext überschreiben                         |
-| `LEAD_CAPTURE_ENABLED`      | Lead-Erfassung aktivieren (Standard `false`, Abschnitt 13)     |
-| `CLOSER_DEBUG`              | Ausführliche Logausgaben (`true`/`false`)                      |
-
-**Zwei Pipelines** (Abschnitt 10):
-
-- **`providers`** (empfohlen, günstig): Deepgram (STT) + OpenAI (LLM) + Stimme
-  (OpenAI oder Deepgram). LiveKit dient nur als Audiotransport – **keine
-  LiveKit-Inference-Kosten**. Aktiv, sobald `DEEPGRAM_API_KEY` **und**
-  `OPENAI_API_KEY` gesetzt sind.
-- **`inference`**: STT/LLM/TTS über LiveKit Inference (ohne separate Keys, aber
-  kostenpflichtig bei LiveKit).
-
-> **Sicherheit:** API-Secrets gehören ausschließlich serverseitig. Niemals in
-> `NEXT_PUBLIC_`-Variablen speichern, niemals echte Schlüssel committen.
+Auf **„Gespräch starten"** klicken, Mikrofon erlauben – CLOSER begrüßt dich von
+selbst (Vapi `firstMessage`).
 
 ---
 
 ## 7. Orb-Bild ablegen
 
-Die zentrale Figur ist der goldene Orb. Lege die Datei hier ab:
-
-```
-public/johann-orb.png
-```
-
-Empfohlen: quadratisches PNG, ~1024×1024 px, transparenter Hintergrund.
-
-**Fehlt die Datei**, zeigt die Oberfläche automatisch einen passenden
-CSS-Fallback-Orb an (siehe `components/closer/closer-orb.tsx`). Der Pfad
-`/johann-orb.png` bleibt gültig – sobald die Datei vorhanden ist, wird sie
-ohne Codeänderung verwendet. Details: `public/README-johann-orb.md`.
+- Pfad: **`public/johann-orb.png`** (liegt bereits als reales CLOSER-Bild vor).
+- Zum Austauschen die Datei am selben Pfad ersetzen (quadratisch, ~1024×1024,
+  freigestellt/auf Dunkel). Fehlt sie, zeigt die App einen CSS-Fallback-Orb.
+- Ebenfalls ersetzbar: `public/og-image.png`, `app/favicon.ico`.
 
 ---
 
-## 8. Agentenname ändern
+## 8. Name, Persönlichkeit, Begrüßung, Stimme & Modell ändern
 
-Der Name muss an drei Stellen konsistent sein:
+Alles zentral und klar getrennt:
 
-- Frontend `.env.local`: `AGENT_NAME`
-- Voice-Agent `.env.local`: `AGENT_NAME`
-- Angezeigter Name/Texte: `lib/closer-content.ts` (`agentName`, `agentTagline`)
+| Was | Datei |
+|-----|-------|
+| Anzeigename „CLOSER" & alle UI-Texte | `lib/ui-text.ts` |
+| Marken-/Seitenname, Farben, Orb-Pfad | `app-config.ts` |
+| **Systemprompt / Persönlichkeit** | `lib/closer/system-prompt.ts` |
+| **Begrüßung, Modell, Stimme, Sprache** | `lib/closer/assistant.ts` |
+| Wissensbasis (Firmenfakten) | `lib/closer/knowledge.ts` |
 
-Standard ist überall `CLOSER`.
+**Stimme auf Premium-Deutsch (empfohlen):** In `lib/closer/assistant.ts` das
+`voice`-Objekt ersetzen, z. B.
+
+```ts
+voice: { provider: '11labs', voiceId: '<deine-elevenlabs-stimme>' }
+```
+
+und ElevenLabs im Vapi-Dashboard verbinden. Verfügbare Modelle/Stimmen:
+<https://docs.vapi.ai/>. **Erfinde keine Modell-/Stimmnamen** – nur reale Werte
+deines Kontos verwenden.
 
 ---
 
-## 9. Systemprompt ändern
+## 9. Wissensbasis pflegen (KickstarterCash-Fakten)
 
-Der vollständige Charakter-Prompt liegt zentral in:
+Datei: `lib/closer/knowledge.ts`
 
-```
-voice-agent/src/prompts/closer-system-prompt.ts
-```
-
-Dort die Konstante `CLOSER_SYSTEM_PROMPT` anpassen. Zusätzliche Regeln (Sprache,
-kurze Sprachausgabe) und die Wissensbasis werden in `voice-agent/src/agent.ts`
-zusammengeführt.
+- Aktuell **nur Platzhalter** – **keine** Preise, Leistungen, Partner oder
+  Garantien hinterlegt.
+- Nur **geprüfte** Fakten eintragen und `verified: true` sowie `lastUpdated`
+  setzen. Solange nichts freigegeben ist, sagt CLOSER ehrlich, dass ihm die
+  Daten fehlen.
 
 ---
 
-## 10. Pipeline, Stimme und Modelle ändern
+## 10. Optionale Lead-Erfassung
 
-Alle austauschbaren Bausteine sind in **`voice-agent/src/config.ts`** gebündelt
-und über Environment-Variablen steuerbar (`voice-agent/.env.local`).
-
-### Pipeline „providers" (empfohlen – nutzt deine eigenen Keys)
-
-Deepgram (Hören) + OpenAI (Denken) + Stimme (OpenAI **oder** Deepgram). LiveKit
-ist dann nur das Audiokabel – **keine LiveKit-Inference-Kosten**. Aktiviert sich
-automatisch, sobald beide Keys gesetzt sind:
-
-```env
-DEEPGRAM_API_KEY=...      # STT (und optional die Stimme)
-OPENAI_API_KEY=...        # LLM/GPT (und Standard-Stimme)
-```
-
-**Deutsche Stimme wählen:**
-
-- **OpenAI-TTS (Standard, mehrsprachig):**
-  ```env
-  CLOSER_TTS_PROVIDER=openai
-  CLOSER_TTS_VOICE=onyx      # alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer
-  ```
-- **Deepgram-Stimme (z. B. deutsche Aura-2-„Julius"-Variante):** die **exakte
-  Modell-ID** aus der Deepgram-Doku eintragen:
-  ```env
-  CLOSER_TTS_PROVIDER=deepgram
-  CLOSER_DEEPGRAM_TTS_MODEL=<exakte-deepgram-modell-id>
-  ```
-
-Modelle optional überschreiben: `CLOSER_LLM_MODEL` (OpenAI-Modell, z. B.
-`gpt-4o-mini`), `CLOSER_STT_MODEL` (Deepgram, z. B. `nova-3`).
-
-### Pipeline „inference" (alles über LiveKit)
-
-`CLOSER_PIPELINE=inference` – nutzt LiveKit Inference (kostenpflichtig bei
-LiveKit), keine separaten Keys nötig. Modelle via `CLOSER_LLM_MODEL`,
-`CLOSER_STT_MODEL`, `CLOSER_TTS_MODEL`, `VOICE_ID`.
-
-> **Wichtig:** Modell-/Stimmen-Namen ändern sich – bitte in der jeweiligen Doku
-> prüfen: OpenAI (LLM/TTS), Deepgram (STT/TTS) bzw. LiveKit
-> (<https://docs.livekit.io/agents/models/>). **Keine Stimme einer realen
-> Person klonen.**
-
-Für eine Realtime-Pipeline statt STT→LLM→TTS siehe die LiveKit-Doku
-(`RealtimeModel`) – die erste Version nutzt bewusst die klassische Pipeline,
-damit Stimme, Intelligenz und Anbieter getrennt konfigurierbar bleiben.
+Datei: `lib/closer/lead-capture.ts` – **deaktivierter Platzhalter** (keine
+Speicherung). Für Vapi später als Assistenten-Tool/Funktion umsetzen (mit
+ausdrücklicher Einwilligung, ohne Zahlungs-/Ausweis-/Kartendaten).
 
 ---
 
 ## 11. Lokale Fehlerdiagnose
 
-- **„Ton aktivieren“-Button erscheint:** Der Browser blockiert Autoplay – klicken.
-- **Mikrofon abgelehnt:** Zugriff in den Browser-Einstellungen erlauben, neu starten.
-- **Es meldet sich niemand:** Läuft der Voice-Agent (`voice-agent/`, `pnpm dev`)?
-  Stimmen `AGENT_NAME` und LiveKit-Zugangsdaten in beiden `.env.local` überein?
-- **„Konfiguration unvollständig“:** `LIVEKIT_URL/API_KEY/API_SECRET` prüfen.
-- **`maximum number of agents reached (1/1)`:** Du versuchst, den Agent **bei
-  LiveKit** zu hosten – das ist limitiert. Stattdessen selbst betreiben
-  (Abschnitt 12, „Agent selbst hosten"). Den hängenden LiveKit-Deploy löschen.
-- **Agent-Logs:** `CLOSER_DEBUG=true` im Voice-Agent setzen.
-- **Checks ausführen:** siehe Abschnitt „Prüfung“ in dieser Datei / README.
-
-Die Oberfläche zeigt nutzerfreundliche Fehlermeldungen statt technischer
-Rohfehler (siehe `components/closer/closer-error.tsx`).
+| Symptom | Ursache / Lösung |
+|--------|-------------------|
+| „Es fehlt der öffentliche Vapi-Schlüssel." | `NEXT_PUBLIC_VAPI_PUBLIC_KEY` in `.env.local` setzen, Dev-Server neu starten. |
+| „Kein Mikrofonzugriff." | Im Browser Mikrofon erlauben; Seite über `https`/`localhost` öffnen. |
+| Kein Ton / keine Antwort | Provider-Keys im Vapi-Dashboard gesetzt? Guthaben vorhanden? |
+| Verbindung bricht ab | Public Key gültig? In der Vapi-Konsole die Call-Logs prüfen. |
+| Browser nicht unterstützt | Aktuellen Chrome/Edge/Firefox/Safari verwenden. |
 
 ---
 
 ## 12. Produktionsbereitstellung
 
-- **Frontend:** Als normale Next.js-App deploybar (z. B. Vercel). LiveKit-Secrets
-  als serverseitige Environment-Variablen hinterlegen.
-  - Die Token-Route `app/api/token/route.ts` funktioniert auch in Produktion
-    (sie meldet fehlende Zugangsdaten klar). ⚠️ Sie gibt Tokens jedoch **ohne
-    eigene Authentifizierung** aus – vor einem öffentlichen Launch davor eine
-    Auth-Schicht (Login/Rate-Limit) ergänzen. Zum harten Sperren:
-    `LIVEKIT_TOKEN_ROUTE_DISABLED=true`.
-- **Voice-Agent:** Als eigenständiger, langlebiger Node-Prozess deployen
-  (`pnpm start`), z. B. Container/Worker. Er läuft **getrennt** vom Frontend.
-  LiveKit-Zugangsdaten als Environment-Variablen setzen.
-- Build-Befehle: Frontend `pnpm build`; Voice-Agent `pnpm typecheck` (+ Tests).
-
-### Agent selbst hosten – NICHT bei LiveKit „deployen"
-
-> **Wichtig:** „Deploy new agent" in der LiveKit-Konsole = LiveKit **hostet** den
-> Agent für dich. Der kostenlose Tarif erlaubt nur **einen** solchen gehosteten
-> Agent (Fehler `maximum number of agents reached (1/1)`). Unser Agent braucht
-> das **nicht**: Er läuft auf **deiner** Infrastruktur und **verbindet sich nur**
-> mit dem LiveKit-Projekt über den API-Key – das zählt nicht gegen dieses Limit.
-
-Der Ordner `voice-agent/` enthält dafür ein **`Dockerfile`** (Node 24). Damit
-lässt sich der Agent überall als Container betreiben (Sevalla-Dienst, VM,
-beliebiger Container-Host):
-
 ```bash
-# im Ordner voice-agent/
-docker build -t closer-agent .
-docker run --env-file .env.local closer-agent
+pnpm build && pnpm start
 ```
 
-**Auf Sevalla** als zweiter Dienst:
-
-1. Neuen Dienst anlegen, **Root-Verzeichnis** auf `voice-agent` setzen (damit das
-   Dockerfile gefunden wird).
-2. **Environment-Variablen** setzen: `LIVEKIT_URL`, `LIVEKIT_API_KEY`,
-   `LIVEKIT_API_SECRET`, `AGENT_NAME=CLOSER`, `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`
-   (plus optional `CLOSER_TTS_PROVIDER` / `CLOSER_DEEPGRAM_TTS_MODEL`).
-3. Deploy. Der Dienst ist ein **Worker** (kein Web-Port nötig) und verbindet sich
-   selbstständig mit LiveKit.
-
-> LiveKit-Projekt: Du kannst dasselbe Projekt wie ein anderer Agent nutzen
-> (mit eindeutigem `AGENT_NAME` für expliziten Dispatch) – ihr teilt euch dann
-> die Freiminuten – oder für saubere Trennung ein eigenes LiveKit-Projekt/Konto
-> anlegen.
+- Environment-Variablen im Hosting-Dashboard (z. B. Vercel) hinterlegen.
+- **Sicherheit:**
+  - Den **Public Key** im Vapi-Dashboard auf deine Domain(s) beschränken
+    (Allowed Origins), damit ihn niemand missbräuchlich nutzt.
+  - Optional den **Systemprompt verbergen**: Assistenten serverseitig per
+    privatem Vapi-Key erzeugen (eigene API-Route) und nur die Assistenten-ID an
+    den Client geben. Für den Standardbetrieb nicht nötig – der Prompt ist kein
+    Geheimnis.
 
 ---
 
-## 13. Welche Teile sind noch Platzhalter?
+## 13. Was ist noch Platzhalter?
 
-- **`public/johann-orb.png`** – noch abzulegen (CSS-Fallback aktiv).
-- **`voice-agent/src/knowledge/kickstartercash.ts`** – die Wissensbasis enthält
-  **keine** echten Firmendaten. Solange keine geprüften Angaben hinterlegt sind,
-  sagt CLOSER ehrlich, dass ihm die Daten fehlen. **Hier** echte, freigegebene
-  Informationen ergänzen (Unternehmensbeschreibung, Produkte/Leistungen, FAQ,
-  Kontakt-/Eskalationswege). Keine Preise, Garantien oder rechtlichen Aussagen
-  erfinden.
-- **Lead-Erfassung** (`voice-agent/src/tools/lead-capture.ts`) – nur die
-  Struktur ist vorbereitet, standardmäßig **deaktiviert**. Es wird **nichts**
-  gespeichert. Vor Aktivierung ein echtes, DSGVO-konformes Backend anbinden und
-  ausdrückliche Einwilligung voraussetzen.
-- **Open-Graph-Bild** (`app/opengraph-image.tsx`) – schlichter, selbsttragender
-  Platzhalter. Bei Bedarf durch ein echtes Motiv ersetzen.
-- **Favicon** (`app/favicon.ico`) – aktuell das Starter-Icon; bei Bedarf ersetzen.
-- **Token-Route** – funktionsfähig, aber ohne eigene Authentifizierung; vor
-  öffentlichem Launch absichern (Abschnitt 12).
+- `public/johann-orb.png`, `public/og-image.png`, `app/favicon.ico` – aus dem
+  gelieferten CLOSER-Bild erzeugt (bei Bedarf ersetzen).
+- `lib/closer/knowledge.ts` – **alle** Firmen-/Produktfakten.
+- `lib/closer/lead-capture.ts` – Lead-Erfassung, **deaktiviert**.
+- Modell/Stimme in `lib/closer/assistant.ts` – gegen dein Vapi-Konto prüfen.

@@ -1,98 +1,63 @@
-'use client';
-
-import { useMemo } from 'react';
-import { cn } from '@/lib/shadcn/utils';
-
-interface AmbientBackgroundProps {
-  className?: string;
-}
-
 /**
- * Atmosphärischer Hintergrund für die gesamte Bühne (Sektion 3 & 4):
- * weiches radiales Goldlicht, sehr dezente Chartlinien und eine dunkle
- * Vignette. Rein dekorativ und daher `aria-hidden`. Nutzt ausschließlich
- * CSS-Gradients und statisches SVG – keine laufende Canvas-Schleife
- * (Sektion 20).
+ * Dekorativer Atmosphären-Hintergrund: dezentes Goldraster, sehr subtile
+ * Chartlinien und langsam aufsteigende Partikel. Rein visuell, daher
+ * aria-hidden. Bewegung wird per prefers-reduced-motion (CSS) reduziert.
  */
-export function AmbientBackground({ className }: AmbientBackgroundProps) {
-  // Chartlinie einmalig erzeugen (nur Dekoration, keine echten Kurse).
-  const chartPath = useMemo(() => buildChartPath(), []);
 
+const PARTICLES = [
+  { left: '12%', delay: '0s', duration: '14s' },
+  { left: '24%', delay: '3s', duration: '18s' },
+  { left: '38%', delay: '7s', duration: '16s' },
+  { left: '57%', delay: '1.5s', duration: '20s' },
+  { left: '69%', delay: '9s', duration: '15s' },
+  { left: '81%', delay: '5s', duration: '19s' },
+  { left: '91%', delay: '11s', duration: '17s' },
+];
+
+export function AmbientBackground() {
   return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        'bg-background pointer-events-none fixed inset-0 -z-10 overflow-hidden',
-        className
-      )}
-    >
-      {/* Weiches Iris-Licht, oben links */}
-      <div
-        className="absolute -top-1/3 -left-1/4 h-[120vh] w-[120vh] rounded-full opacity-70 blur-3xl"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(139,108,255,0.18) 0%, rgba(139,108,255,0.05) 35%, transparent 70%)',
-        }}
-      />
-      {/* Zweiter, cyanfarbener Lichtkegel rechts unten für Tiefe */}
-      <div
-        className="absolute -right-1/4 -bottom-1/3 h-[100vh] w-[100vh] rounded-full opacity-50 blur-3xl"
-        style={{
-          background: 'radial-gradient(circle, rgba(53,229,255,0.12) 0%, transparent 65%)',
-        }}
-      />
+    <div className="ambient" aria-hidden="true">
+      <div className="ambient-grid" />
 
-      {/* Dezente Börsen-/Erfolgsästhetik: Chartlinien im Hintergrund */}
+      {/* Sehr dezente, aufsteigende Chartlinie (Erfolgs-/Börsenästhetik). */}
       <svg
-        className="absolute inset-0 h-full w-full opacity-[0.06]"
-        viewBox="0 0 1200 800"
+        className="ambient-chart"
+        viewBox="0 0 1440 900"
         preserveAspectRatio="xMidYMid slice"
         fill="none"
       >
         <defs>
-          <linearGradient id="closer-chart-line" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#5a3fd6" />
-            <stop offset="50%" stopColor="#c9b8ff" />
-            <stop offset="100%" stopColor="#35e5ff" />
+          <linearGradient id="chartline" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stopColor="#8A6420" stopOpacity="0" />
+            <stop offset="55%" stopColor="#D4A63A" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#F3D58A" stopOpacity="1" />
           </linearGradient>
-          <pattern id="closer-grid" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M60 0 L0 0 0 60" fill="none" stroke="#8b6cff" strokeWidth="0.5" />
-          </pattern>
         </defs>
-        <rect width="1200" height="800" fill="url(#closer-grid)" />
-        <path d={chartPath} stroke="url(#closer-chart-line)" strokeWidth="2" fill="none" />
+        <path
+          d="M-40 720 L180 660 L320 690 L470 560 L620 600 L780 430 L940 470 L1100 300 L1260 340 L1480 150"
+          stroke="url(#chartline)"
+          strokeWidth="2"
+        />
+        <path
+          d="M-40 800 L200 770 L360 785 L520 700 L700 730 L880 610 L1060 650 L1240 520 L1480 470"
+          stroke="url(#chartline)"
+          strokeWidth="1"
+          strokeOpacity="0.5"
+        />
       </svg>
 
-      {/* Dunkle Vignette für Kontrast zum Orb */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)',
-        }}
-      />
-      {/* Feines Grundrauschen oben, damit der Verlauf nicht flach wirkt */}
-      <div
-        className="absolute inset-x-0 top-0 h-40"
-        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)' }}
-      />
+      {PARTICLES.map((p, i) => (
+        <span
+          key={i}
+          className="ambient-particle"
+          style={{
+            left: p.left,
+            bottom: '8%',
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+          }}
+        />
+      ))}
     </div>
   );
-}
-
-/** Baut eine ansteigende, gezackte Chartlinie (nur Dekoration). */
-function buildChartPath(): string {
-  const points = [
-    [0, 620],
-    [120, 560],
-    [240, 600],
-    [360, 500],
-    [480, 540],
-    [600, 420],
-    [720, 460],
-    [840, 320],
-    [960, 360],
-    [1080, 220],
-    [1200, 180],
-  ];
-  return points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ');
 }
