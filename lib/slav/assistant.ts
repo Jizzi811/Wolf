@@ -89,11 +89,12 @@ export function buildSlavAssistant(): SlavAssistant {
       temperature: 0.95,
       messages: [{ role: 'system', content: buildInstructions() }],
     },
-    // Platzhalter-Stimme. Für Slav idealerweise eine verspielte deutsche
-    // Männerstimme im Vapi-Dashboard/ElevenLabs wählen und voiceId ersetzen.
+    // Slav-Stimme (ElevenLabs). Zum Wechseln einfach eine andere ElevenLabs-
+    // Voice-ID (oder einen Vapi-Alias) eintragen; ElevenLabs muss dafür im
+    // Vapi-Dashboard verbunden sein.
     voice: {
       provider: '11labs',
-      voiceId: 'BDqe1qZiwPi7xspRxTgh',
+      voiceId: 'ygoBNrnmTEdu5NtDTmAY',
       model: 'eleven_turbo_v2_5',
       language: 'de',
       // Etwas mehr Ausdruck/Bewegung als beim seriösen CLOSER.
