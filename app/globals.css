@@ -1,23 +1,31 @@
 @import 'tailwindcss';
 
 /* ------------------------------------------------------------------ */
-/*  Design-Tokens (Gold / Anthrazit / Creme)                          */
-/*  Werden als Tailwind-Utilities (bg-ink, text-gold …) nutzbar.      */
+/*  Design-Tokens (SLAV: Marineblau / elektrisches Violett / Pink)    */
+/*  Passend zum Porträt: tiefes Navy mit blau-violettem Glühen und    */
+/*  einem Pink-Rot-Akzent vom Bunny-Shirt.                            */
+/*                                                                    */
+/*  HINWEIS: Die Token-NAMEN (--color-gold*) bleiben aus historischen */
+/*  Gründen erhalten, damit alle Komponenten-Utilities (text-gold,    */
+/*  bg-gold …) ohne Umbau weiter funktionieren. Die WERTE sind nun    */
+/*  das Violett/Blau der Slav-Marke.                                  */
 /* ------------------------------------------------------------------ */
 @theme {
-  --color-ink: #0a0a0b;
-  --color-ink-2: #121214;
-  --color-ink-3: #1b1b1f;
-  --color-ink-4: #26262b;
+  --color-ink: #0a0b1a;
+  --color-ink-2: #10122a;
+  --color-ink-3: #191c3d;
+  --color-ink-4: #262a55;
 
-  --color-gold: #d4a63a;
-  --color-gold-light: #f3d58a;
-  --color-gold-dark: #8a6420;
+  /* „gold" = jetzt elektrisches Violett/Indigo (Haupt-Akzent). */
+  --color-gold: #7b6cf6;
+  --color-gold-light: #a99bff;
+  --color-gold-dark: #4a3db8;
 
-  --color-cream: #f2ead9;
-  --color-muted: #9c9484;
+  --color-cream: #edecfb;
+  --color-muted: #9793bf;
 
-  --color-danger: #e0795f;
+  /* Pink-Rot vom Bunny-Shirt – für Warnungen/Akzente. */
+  --color-danger: #ff5c7a;
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
@@ -45,16 +53,17 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    /* Warmes, sehr dezentes Grundleuchten – kein flacher Schwarzblock. */
+    /* Blau-violettes Grundleuchten wie im Porträt – Glühen hinter der Mitte. */
     background-image:
       radial-gradient(
-        120% 90% at 78% 12%,
-        color-mix(in srgb, var(--color-gold) 10%, transparent) 0%,
-        transparent 55%
+        90% 75% at 50% 8%,
+        color-mix(in srgb, var(--color-gold-light) 16%, transparent) 0%,
+        color-mix(in srgb, var(--color-gold) 10%, transparent) 32%,
+        transparent 62%
       ),
       radial-gradient(
-        90% 70% at 12% 92%,
-        color-mix(in srgb, var(--color-gold-dark) 12%, transparent) 0%,
+        80% 70% at 15% 95%,
+        color-mix(in srgb, var(--color-gold-dark) 16%, transparent) 0%,
         transparent 60%
       );
     background-attachment: fixed;
@@ -244,7 +253,7 @@
     height: 100%;
     border-radius: 50%;
     background:
-      radial-gradient(circle at 36% 30%, #fff4d6 0%, var(--color-gold-light) 14%, var(--color-gold) 42%, var(--color-gold-dark) 78%, #4a3410 100%);
+      radial-gradient(circle at 36% 30%, #eef0ff 0%, var(--color-gold-light) 14%, var(--color-gold) 42%, var(--color-gold-dark) 78%, #171338 100%);
     box-shadow:
       inset -14px -18px 40px rgba(0, 0, 0, 0.55),
       inset 12px 14px 30px color-mix(in srgb, var(--color-gold-light) 60%, transparent);

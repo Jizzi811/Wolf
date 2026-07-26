@@ -37,15 +37,16 @@ export const APP_CONFIG: AppConfig = {
   pageDescription:
     'Ein alberner Voice Agent: Reporter Slav berichtet live von seiner riesengroßen Toastmaschine.',
 
-  accent: '#E8A54B',
-  themeColor: '#0A0A0B',
+  accent: '#7B6CF6',
+  themeColor: '#0A0B1A',
 
   startButtonText: 'Sendung starten',
 
   supportsChatInput: true,
 
-  // Platzhalter-Orb. Für Slav am besten das Porträt aus dem Upload als Bild
-  // unter public/ ablegen und diesen Pfad darauf zeigen lassen.
-  orbImageSrc: '/johann-orb.png',
-  orbAltText: 'Orb mit dem Porträt von Reporter Slav – der alberne Reporter aus Rheinland-Pflanz.',
+  // Porträt von Reporter Slav. Die Datei muss unter public/slav-agent.png liegen
+  // (siehe SETUP-SLAV.md). Solange sie fehlt, zeigt der Orb einen violetten
+  // CSS-Fallback.
+  orbImageSrc: '/slav-agent.png',
+  orbAltText: 'Porträt von Reporter Slav – Brille, markante Haartolle, schwarzes Shirt, blau-violettes Leuchten.',
 };

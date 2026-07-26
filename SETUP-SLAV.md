@@ -41,9 +41,12 @@ Zusätzlich das Branding anpassen:
 
 ## Noch zu erledigen (optional)
 
-1. **Porträt einsetzen:** Das Bild aus dem Upload als `public/…png` ablegen und
-   `orbImageSrc` in `app-config.ts` darauf zeigen lassen (aktuell noch der
-   Platzhalter `johann-orb.png`).
+1. **Porträt einsetzen:** Die App erwartet das Slav-Porträt unter
+   **`public/slav-agent.png`** (bereits in `app-config.ts` als `orbImageSrc`
+   eingetragen). Solange die Datei fehlt, zeigt der Orb einen violetten
+   CSS-Fallback. Bild einfach als `public/slav-agent.png` ins Repo legen –
+   idealerweise mit transparentem Hintergrund, damit die Figur weich in die
+   Bühne ausläuft.
 2. **Stimme wählen:** In `lib/slav/assistant.ts` ist `voiceId` ein funktionierender
    Platzhalter. Für Slav am besten eine verspielte, warme deutsche Männerstimme im
    Vapi-Dashboard / ElevenLabs auswählen und die `voiceId` ersetzen.
