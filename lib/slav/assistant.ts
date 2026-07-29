@@ -20,9 +20,7 @@ import { buildSlavLore } from './knowledge';
 import { SLAV_SYSTEM_PROMPT } from './system-prompt';
 
 /** Standardbegrüßung – wird von Vapi als `firstMessage` automatisch gesprochen. */
-export const SLAV_GREETING =
-  'Eilmeldung! Da ist ja jemand. Reporter Slav am Mikrofon, direkt neben meiner ' +
-  'riesengroßen Toastmaschine. Das Brot ist gleich fertig – erzähl, was gibt es Neues bei dir?';
+export const SLAV_GREETING = 'Hallo Gebrüder Slav, was wollen wir heute Schönes anstellen?';
 
 /** Standardsprache. Der Agent passt sich der Sprache des Nutzers an. */
 export const SLAV_LANGUAGE = 'de';
