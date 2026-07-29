@@ -237,6 +237,53 @@
     -webkit-user-drag: none;
   }
 
+  /* Charme-Glint: diagonaler Lichtstreif, der periodisch über den Orb wandert. */
+  .orb-glint {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 2;
+    -webkit-mask: radial-gradient(circle, #000 58%, transparent 72%);
+    mask: radial-gradient(circle, #000 58%, transparent 72%);
+  }
+  .orb-glint::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -30%;
+    width: 42%;
+    height: 220%;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      color-mix(in srgb, var(--color-gold-light) 55%, transparent) 45%,
+      rgba(255, 255, 255, 0.7) 50%,
+      color-mix(in srgb, var(--color-gold-light) 55%, transparent) 55%,
+      transparent 100%
+    );
+    transform: rotate(18deg) translateX(-280%);
+    filter: blur(2px);
+    mix-blend-mode: screen;
+    opacity: 0;
+    animation: orb-glint-sweep 6.5s ease-in-out infinite;
+  }
+  @keyframes orb-glint-sweep {
+    0%,
+    100% {
+      transform: rotate(18deg) translateX(-280%);
+      opacity: 0;
+    }
+    16% {
+      opacity: 0.9;
+    }
+    36% {
+      transform: rotate(18deg) translateX(560%);
+      opacity: 0;
+    }
+  }
+
   /* CSS-Fallback, falls das Orb-Bild fehlt. */
   .orb-fallback {
     position: relative;
@@ -319,6 +366,16 @@
 }
 .orb-stage[data-state='disconnected'] .orb-ambient {
   opacity: 0.28;
+  animation: breathe-soft 7.5s ease-in-out infinite;
+}
+@keyframes breathe-soft {
+  0%,
+  100% {
+    opacity: 0.22;
+  }
+  50% {
+    opacity: 0.42;
+  }
 }
 
 .orb-stage[data-state='connecting'] .orb-core,
