@@ -68,6 +68,8 @@ export function CloserOrb({ state }: CloserOrbProps) {
             onError={() => setImgFailed(true)}
           />
         )}
+        {/* Sanfter Glanz-Sweep („Charme-Glint") – rein dekorativ. */}
+        <div className="orb-glint" aria-hidden="true" />
       </div>
     </div>
   );
