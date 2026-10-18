@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { APP_CONFIG } from '@/app-config';
+import { usePublicUi } from './ui-context';
 import { type CloserState, closerStateAria } from '@/lib/closer-state';
 
 interface CloserOrbProps {
@@ -23,6 +23,7 @@ const ORBIT_DOTS = [
  */
 export function CloserOrb({ state }: CloserOrbProps) {
   const [imgFailed, setImgFailed] = useState(false);
+  const ui = usePublicUi();
 
   return (
     <div
@@ -59,10 +60,11 @@ export function CloserOrb({ state }: CloserOrbProps) {
           <div className="orb-fallback" aria-hidden="true" />
         ) : (
           <Image
-            src={APP_CONFIG.orbImageSrc}
+            src={ui.imageUrl}
             alt=""
             fill
             priority
+            unoptimized={ui.imageUrl.startsWith('http')}
             sizes="(max-width: 768px) 68vw, 30rem"
             style={{ objectFit: 'contain' }}
             onError={() => setImgFailed(true)}

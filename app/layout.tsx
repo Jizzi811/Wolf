@@ -1,32 +1,33 @@
 import type { Metadata, Viewport } from 'next';
 import { APP_CONFIG } from '@/app-config';
 import { AmbientBackground } from '@/components/closer/ambient-background';
+import { getSettings } from '@/lib/admin/settings';
 import './globals.css';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://closer.kickstartercash.club';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://closer-henna.vercel.app');
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: APP_CONFIG.pageTitle,
-  description: APP_CONFIG.pageDescription,
-  applicationName: APP_CONFIG.productName,
-  authors: [{ name: APP_CONFIG.companyName }],
-  openGraph: {
-    title: APP_CONFIG.pageTitle,
-    description: APP_CONFIG.pageDescription,
-    siteName: APP_CONFIG.companyName,
-    locale: 'de_DE',
-    type: 'website',
-    // Platzhalter-Grafik – bei Bedarf durch finales Marken-OG-Bild ersetzen.
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'CLOSER' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: APP_CONFIG.pageTitle,
-    description: APP_CONFIG.pageDescription,
-    images: ['/og-image.png'],
-  },
-};
+/** Titel und Beschreibung kommen aus dem Admin (Texte & Design). */
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSettings();
+  const title = s.texts.pageTitle || APP_CONFIG.pageTitle;
+  const description = s.texts.pageDescription || APP_CONFIG.pageDescription;
+  return {
+    metadataBase: new URL(siteUrl),
+    title,
+    description,
+    applicationName: s.persona.name,
+    authors: [{ name: APP_CONFIG.companyName }],
+    openGraph: {
+      title,
+      description,
+      siteName: APP_CONFIG.companyName,
+      locale: 'de_DE',
+      type: 'website',
+      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: s.persona.name }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: ['/og-image.png'] },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: APP_CONFIG.themeColor,
