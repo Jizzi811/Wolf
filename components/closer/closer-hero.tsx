@@ -1,4 +1,6 @@
-import { uiText } from '@/lib/ui-text';
+'use client';
+
+import { usePublicUi } from './ui-context';
 
 /** Kleiner goldener Aufzählungspunkt (Diamant). */
 function Bullet() {
@@ -20,6 +22,7 @@ function Bullet() {
  * Auf Mobil steht darunter direkt der Orb.
  */
 export function CloserHeroHeadline() {
+  const uiText = usePublicUi();
   return (
     <div className="flex flex-col">
       <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-gold/80">
@@ -49,6 +52,7 @@ interface CloserHeroPitchProps {
  * Unterer Hero-Block: Aktionsbereich, drei Merkmale, Datenschutzhinweis.
  */
 export function CloserHeroPitch({ action }: CloserHeroPitchProps) {
+  const uiText = usePublicUi();
   return (
     <div className="flex flex-col">
       {action ? <div className="mb-9">{action}</div> : null}

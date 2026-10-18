@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Mic, MicOff, PhoneOff, Send, TextT } from './control-icons';
 import { Button } from '@/components/ui/button';
 import { uiText } from '@/lib/ui-text';
+import { usePublicUi } from './ui-context';
 import { cn } from '@/lib/utils';
 
 interface CloserControlsProps {
@@ -70,6 +71,7 @@ export function CloserControls({
 
 function CloserTextInput({ onSendText }: { onSendText: (text: string) => void }) {
   const [value, setValue] = useState('');
+  const placeholder = usePublicUi().textInputPlaceholder;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,8 +87,8 @@ function CloserTextInput({ onSendText }: { onSendText: (text: string) => void })
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder={uiText.controls.textInputPlaceholder}
-        aria-label={uiText.controls.textInputPlaceholder}
+        placeholder={placeholder}
+        aria-label={placeholder}
         className={cn(
           'h-11 flex-1 rounded-full border border-gold/25 bg-white/[0.03] px-4 text-sm text-cream',
           'placeholder:text-muted/60 focus-visible:border-gold/60 focus-visible:outline-2',

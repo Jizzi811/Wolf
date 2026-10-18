@@ -7,7 +7,7 @@ import { CloserOrb } from './closer-orb';
 import { CloserStatus } from './closer-status';
 import { CloserTranscript } from './closer-transcript';
 import { CloserVisualizer } from './closer-visualizer';
-import { APP_CONFIG } from '@/app-config';
+import { usePublicUi } from './ui-context';
 import { type CloserState } from '@/lib/closer-state';
 import { type CloserErrorKey } from '@/lib/errors';
 import { uiText } from '@/lib/ui-text';
@@ -50,6 +50,7 @@ export function CloserScene({
   onSendText,
   onDismissError,
 }: CloserSceneProps) {
+  const ui = usePublicUi();
   const startAction = (
     <Button
       size="lg"
@@ -59,7 +60,7 @@ export function CloserScene({
       aria-busy={connecting}
       className="w-full sm:w-auto"
     >
-      {connecting ? uiText.buttonConnecting : uiText.buttonStart}
+      {connecting ? uiText.buttonConnecting : ui.buttonStart}
     </Button>
   );
 
@@ -77,7 +78,7 @@ export function CloserScene({
 
         <div className="flex flex-col items-center gap-1">
           <CloserStatus state={state} />
-          <p className="text-xs text-muted/70">{uiText.agentTagline}</p>
+          <p className="text-xs text-muted/70">{ui.tagline}</p>
         </div>
 
         {isConnected && (
@@ -87,12 +88,12 @@ export function CloserScene({
             onEnd={onEnd}
             transcriptOpen={transcriptOpen}
             onToggleTranscript={onToggleTranscript}
-            supportsChatInput={APP_CONFIG.supportsChatInput}
+            supportsChatInput={ui.supportsChatInput}
             onSendText={onSendText}
           />
         )}
 
-        {isConnected && transcriptOpen && (
+        {isConnected && transcriptOpen && ui.showTranscript && (
           <CloserTranscript
             state={state}
             messages={messages}

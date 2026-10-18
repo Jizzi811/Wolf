@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { type CloserState } from '@/lib/closer-state';
 import { uiText } from '@/lib/ui-text';
+import { usePublicUi } from './ui-context';
 import { cn } from '@/lib/utils';
 import { type TranscriptMessage } from '@/hooks/use-vapi';
 
@@ -19,6 +20,7 @@ interface CloserTranscriptProps {
  */
 export function CloserTranscript({ state, messages, partial, className }: CloserTranscriptProps) {
   const endRef = useRef<HTMLDivElement>(null);
+  const ui = usePublicUi();
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' });
@@ -36,7 +38,7 @@ export function CloserTranscript({ state, messages, partial, className }: Closer
       >
         {empty ? (
           <p className="py-6 text-center text-sm text-muted/70">
-            {state === 'thinking' ? uiText.status.thinking : uiText.status.listening} …
+            {state === 'thinking' ? ui.status.thinking : ui.status.listening} …
           </p>
         ) : (
           <>

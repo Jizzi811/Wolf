@@ -1,7 +1,7 @@
 'use client';
 
 import { type CloserState } from '@/lib/closer-state';
-import { uiText } from '@/lib/ui-text';
+import { usePublicUi } from './ui-context';
 import { cn } from '@/lib/utils';
 
 interface CloserStatusProps {
@@ -15,7 +15,7 @@ interface CloserStatusProps {
  * aria-live für Screenreader angekündigt.
  */
 export function CloserStatus({ state, className }: CloserStatusProps) {
-  const label = uiText.status[state];
+  const label = usePublicUi().status[state];
 
   return (
     <div
