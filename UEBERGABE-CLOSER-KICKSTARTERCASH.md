@@ -162,3 +162,40 @@ pnpm typecheck && pnpm lint && pnpm build
 ```
 
 Persona wechseln: `lib/active-persona.ts` (nur auf dem Slav-Branch vorhanden), Branding in `app-config.ts`, Texte in `lib/ui-text.ts`.
+
+---
+
+## 6. Abgleich mit dem Plattform-Chat (UEBERGABE-AUS-CHAT.md, 18.10.2026)
+
+Das Übergabe-Dokument des Plattform-Chats liegt der CLOSER-Session seit dem
+18.10.2026 vor. Maßgebliche Reihenfolge bei Widersprüchen: Datenbank der
+Plattform > Plattform-Code > Aussagen der Betreiberin > ältere Quellen.
+
+### Korrekturen in der CLOSER-Wissensbasis (umgesetzt)
+
+| Thema | Stand vorher (aus KI-Marketing Hub, Juli 2026) | Plattform-Fakt (Datenbank 18.10.2026) |
+|---|---|---|
+| Pakete | nur „Membership 385 € mit Premium Black Card" | 4 Pakete: 385 / 485 / 645 / 725 €, Einrichtung 5 € (Privat) bzw. 25 € (Business) |
+| Black Card | Premium 299 € einzeln, Deluxe 460 €, Monatsgebühr 3 € | Private 315 € (Mitglied 285 €), Business 550 € (Mitglied 450 €), Einrichtung 5 / 25 €, monatlich 10 / 15 € |
+| Provisionen | Level 10 / 5 / 2 / 2 / 1 %, Ränge 12 / 14 / 16 % | Ebene 1 fester Euro-Betrag je Produkt (45 / 65 / 80 / 100 €, Karten 35 / 55 €), Ebenen 2–6: 1 / 0,5 / 0,5 / 0,5 / 0,5 % auf CV; Boni derzeit 0 % |
+| Ränge | 3 Ränge | 5 Ränge: Affiliate, Visionary, Momentum Leader, Elite Ambassador, Crown President |
+| Partner-Kryptokarten (Alpha2Pay, RedotPay, Aurum, …) | als Fakt mit Preisen | nicht in der Plattform-Datenbank; jetzt als UNBESTÄTIGT markiert |
+| PAYMAGO-Gebührenliste | als Fakt | nicht in der Datenbank; UNBESTÄTIGT |
+| Webinar | nur Link kickstartercash.club/webinar.html | fester Wochenplan (KCC Di/Do 20:00, Sa 12:00; VALYGO Fr 19:30; ARVI Mi 20:00; …) |
+| Kontakt | nur „Website/Team" | offizielle Telegram-/WhatsApp-Kanäle, Support-Bot, Telegram-App, Support-Blase |
+| Status | – | Go-live 18.10.2026, Kartenstart 20.10.2026, Auszahlungen pausiert |
+| Firma | nicht genannt | weiterhin nicht genannt (Widerspruch KICKSTARTERCASH L.L.C-FZ / REPAL L.L.C-FZ offen) |
+
+### Klarstellungen zur Architektur
+
+- Die Plattform kickstartercash.club ist **PHP + MariaDB auf Namecheap cPanel**; Admin-, Team- und User-Bereich **existieren dort bereits**. Das React/FastAPI/MongoDB-Projekt `Kickstartercash-App` ist der separate **KI-Marketing Hub**, nicht die Plattform.
+- Die „Chatblase" der Plattform ist das **Support-Widget** (goldener Knopf, Kanäle aus `mod_support_channels`) mit dem funktionslosen Platzhalter-Kanal **„KI Berater"**. Der KI-Assistent **„Kash"** steckt im **Member Support Bot** (Node.js, Telegram). Die KASH-Blase im KI-Marketing Hub ist ein drittes, separates System.
+- Zugriff von außen auf Plattformdaten nur über eine **signierte Schnittstelle** (Muster `api/member-support/index.php`), nie direkt auf die Datenbank. Änderungen an der Plattform liefert der Plattform-Chat als ZIP; die CLOSER-Session spielt nichts live ein.
+
+### Offene Entscheidungen der Betreiberin
+
+1. Ersetzt CLOSER den Kash-Assistenten, ergänzt er ihn, oder ist er die Sprachvariante davor?
+2. Anbindung an die Support-Blase: Kanal „KI Berater" als Link auf CLOSER (sofort möglich), Einbettung per Skript, oder signierte Schnittstelle mit `catalog`- und `lead`-Routen (empfohlen, mittelfristig).
+3. Firmenname und Einlagensicherungs-Aussage freigeben.
+4. Anrede im Voice Agent: CLOSER duzt, die Plattform siezt in Marketing-Texten.
+5. Ob „Johann" als Gründer/Gesicht von CLOSER bleibt (die Plattform nennt Nadja als Betreiberin).
