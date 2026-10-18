@@ -199,3 +199,37 @@ Plattform > Plattform-Code > Aussagen der Betreiberin > ältere Quellen.
 3. Firmenname und Einlagensicherungs-Aussage freigeben.
 4. Anrede im Voice Agent: CLOSER duzt, die Plattform siezt in Marketing-Texten.
 5. Ob „Johann" als Gründer/Gesicht von CLOSER bleibt (die Plattform nennt Nadja als Betreiberin).
+
+## 7. Admin-Modul im CLOSER-Projekt (umgesetzt 18.10.2026, PR #12)
+
+Der Admin-, Team- und Mitgliederbereich lebt **im Vercel-Projekt `closer`** (Repo Jizzi811/Wolf),
+getrennt von Admin/Team/User der PHP-Plattform. Einrichtung und Bedienung: `SETUP-ADMIN.md`.
+
+- **Technik:** Next.js 15, Postgres (Neon über Vercel Storage, Free), Drizzle, Vercel Blob für
+  Uploads, JWT-Sitzungen, Rollen admin/team/user, Team-Rechte je Modul. Tabellen `closer_*`
+  werden beim ersten Zugriff additiv angelegt. Ohne Datenbank läuft die öffentliche Seite mit
+  Standardwerten weiter.
+- **Adressen:** `/setup` (erstes Admin-Konto, einmalig), `/login`, `/registrieren` (nur wenn
+  freigeschaltet), `/admin`, `/team`, `/mein`.
+- **Alles editierbar:** Name, Bild, Begrüßung, Anrede, Charakter-Prompt, Stimme (ElevenLabs-ID,
+  auch geklonte Stimme), Modell, Transkription, alle Seitentexte, Farben, Schalter, Datenschutz-
+  texte, Einwilligungstext. Wissen als Abschnitte mit bestätigt/aktiv/Reihenfolge und Quelle.
+- **Dateien:** PDF, Word, Text, Markdown, CSV, Bilder, Audio, Video (bis 500 MB); Text wird
+  ausgelesen bzw. transkribiert (Whisper, `OPENAI_API_KEY`), KI schlägt Abschnitte vor, Freigabe
+  im Admin. Videos werden nur für den Text gebraucht.
+- **Statistik:** Gespräche pro Tag, Minuten, Ø-Dauer, Leads, Ergebnis, Uhrzeiten, Themen,
+  Empfehler (Ref-Links), je Gespräch Transkript, Zusammenfassung, Kosten, Nutzer; offene Fragen
+  mit Zähler; Protokoll aller Admin-Änderungen.
+- **Vapi:** `/api/assistant` baut den Assistenten serverseitig (Persona + Wissen + Stimme +
+  Funktionen `erfasse_lead`, `offene_frage`); `/api/vapi/webhook` nimmt Funktionsaufrufe und den
+  Gesprächsende-Bericht an (`VAPI_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL` nötig).
+- **Brücke P18:** Client nach Rückmeldung des Plattform-Chats (Signatur-Testwerte geprüft),
+  Cache je Bereich, Wissensabschnitte aus catalog/webinars/channels/content/knowledge ersetzen
+  die manuellen Abschnitte packages, cards-black, commissions-ranks, webinars, contact, status.
+  Rückkanal lead/conversation/feedback per Schalter. Abgleich täglich (Cron) und bei
+  Gesprächsstart nach einer Stunde. Ref-Link `?ref=<benutzername>` wird 30 Tage gemerkt.
+- **Noch zu tun in Vercel (Nadja):** Neon „Connect Project“, Blob „Connect Project“,
+  `NEXT_PUBLIC_SITE_URL`, `VAPI_WEBHOOK_SECRET`, optional `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`,
+  später `KCC_BRIDGE_URL`/`KCC_BRIDGE_SECRET`; danach Redeploy und `/setup`.
+- **Für den Plattform-Chat:** Kanal „KI Berater“ als Link auf `https://closer-henna.vercel.app/?ref=<benutzername>`
+  (Benutzername des angemeldeten Mitglieds, falls ohne Eingriff in den Injektor möglich).
