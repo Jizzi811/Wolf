@@ -34,7 +34,7 @@ Vapi-Anbindung steckt gekapselt in einem einzigen Hook (`hooks/use-vapi.ts`).
 │  ├─ closer/
 │  │  ├─ assistant.ts        # Zentrale Assistenten-Config (Prompt, Modell, Stimme)
 │  │  ├─ system-prompt.ts    # Vollständiger CLOSER-Systemprompt
-│  │  ├─ knowledge.ts        # Wissensbasis (Platzhalter, keine erfundenen Fakten)
+│  │  ├─ knowledge.ts        # Wissensbasis KickstarterCash.club (Membership, Karten, Gebühren, Karriereplan)
 │  │  └─ lead-capture.ts     # Lead-Erfassung (deaktivierter Platzhalter)
 │  ├─ closer-state.ts        # Visuelle Zustände
 │  ├─ ui-text.ts             # Alle UI-Texte zentral
@@ -65,6 +65,7 @@ Datei am selben Pfad ersetzen. Fehlt sie, greift automatisch ein CSS-Fallback-Or
 ## Wichtige Grenzen (bewusst so gebaut)
 
 - CLOSER gibt sich **nie** als reale Person aus.
-- **Keine** erfundenen KickstarterCash-Fakten, Preise oder Garantien.
+- **Keine** erfundenen KickstarterCash-Fakten, Preise oder Garantien – nur die
+  freigegebene Wissensbasis in `lib/closer/knowledge.ts`.
 - **Keine** individuelle Anlage-, Rechts- oder Steuerberatung.
 - Im Browser liegt nur der **öffentliche** Vapi-Key; Provider-Schlüssel bleiben bei Vapi.

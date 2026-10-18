@@ -135,11 +135,17 @@ deines Kontos verwenden.
 
 Datei: `lib/closer/knowledge.ts`
 
-- Aktuell **nur Platzhalter** – **keine** Preise, Leistungen, Partner oder
-  Garantien hinterlegt.
-- Nur **geprüfte** Fakten eintragen und `verified: true` sowie `lastUpdated`
-  setzen. Solange nichts freigegeben ist, sagt CLOSER ehrlich, dass ihm die
-  Daten fehlen.
+- Enthält die freigegebene Wissensbasis zu KickstarterCash.club: Membership
+  (385 €), alle Kartenlösungen (Premium/Deluxe Black Card, Alpha2Pay, Valygo,
+  RedotPay, Aurum, Globale White Card, Wefi, Alphatopay) mit Preisen, Gebühren
+  und Limits, Affiliate-/Karriereplan, Webinar, Kontaktwege und rechtliche
+  Hinweise. Quelle: KASH-Wissensbasis aus `Jizzi811/Kickstartercash-App` und
+  die Webinar-Präsentation (Stand Juli 2026).
+- Bei Änderungen den betroffenen Abschnitt in `KICKSTARTERCASH_SECTIONS`
+  anpassen und `LAST_UPDATED` setzen. Ein Abschnitt mit `verified: false` wird
+  CLOSER als unbestätigt markiert und nicht als Fakt verwendet.
+- CLOSER speichert keine Kontaktdaten (siehe Abschnitt 10) und verweist bei
+  Kaufinteresse auf Website, Webinar oder den persönlichen Berater.
 
 ---
 
@@ -184,6 +190,5 @@ pnpm build && pnpm start
 
 - `public/johann-orb.png`, `public/og-image.png`, `app/favicon.ico` – aus dem
   gelieferten CLOSER-Bild erzeugt (bei Bedarf ersetzen).
-- `lib/closer/knowledge.ts` – **alle** Firmen-/Produktfakten.
 - `lib/closer/lead-capture.ts` – Lead-Erfassung, **deaktiviert**.
 - Modell/Stimme in `lib/closer/assistant.ts` – gegen dein Vapi-Konto prüfen.
