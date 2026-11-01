@@ -102,6 +102,8 @@ async function main() {
   const cid = 'clsr-20261018-aaaaaaaaaaaa';
   await startConversation({ conversationId: cid, visitorId: 'v1', refUsername: 'nadja', userId: admin.id });
   await startConversation({ conversationId: cid, vapiCallId: 'call-1' });
+  // Zweiter Start ohne neue Werte (z. B. Track-Start nach /api/assistant) darf nicht werfen.
+  await startConversation({ conversationId: cid });
   await recordEvent({ type: 'page_view', visitorId: 'v1', path: '/' });
   const transcript = [
     { role: 'assistant' as const, text: 'Hallo', at: 0 },
@@ -110,7 +112,7 @@ async function main() {
   ];
   await endConversation({ conversationId: cid, durationS: 95, transcript, endedReason: 'nutzer-beendet', storeTranscript: true });
   let conv = await d.query.conversations.findFirst({ where: (c, { eq }) => eq(c.conversationId, cid) });
-  assert(conv?.durationS === 95 && conv.messagesCount === 3 && conv.vapiCallId === 'call-1', 'Gespräch beendet und gezählt');
+  assert(conv?.durationS === 95 && conv.messagesCount === 3 && conv.vapiCallId === 'call-1' && conv.refUsername === 'nadja' && conv.userId === admin.id, 'Gespräch beendet und gezählt');
   assert(conv!.topics.includes('Black Card') && conv!.topics.includes('Vergütungsplan'), `Themen erkannt: ${conv!.topics.join(', ')}`);
   await applyEndOfCallReport({ conversationId: cid, vapiCallId: 'call-1', durationS: 97, summary: 'Preisfrage.', transcript, endedReason: 'customer-ended-call', costUsd: 0.0421, storeTranscript: true });
   conv = await d.query.conversations.findFirst({ where: (c, { eq }) => eq(c.conversationId, cid) });
