@@ -12,6 +12,7 @@ import { getLanguage, type CloserLanguage } from '@/lib/closer/languages';
 import { buildKnowledgePrompt, getPromptSections } from './knowledge';
 import { getSettings, type AllSettings } from './settings';
 import { TOOL_DEFINITIONS } from './tools';
+import { createHmac } from 'node:crypto';
 
 export interface AssistantConfig {
   name: string;
@@ -53,6 +54,17 @@ export interface AssistantContext {
   history?: string | null;
   /** Textmodus (kein Mikrofon, keine Stimme). */
   textMode?: boolean;
+}
+
+/**
+ * Signatur je Gespräch für den Webhook. Der Assistent wird im Browser gestartet,
+ * deshalb darf dort kein globales Geheimnis liegen: Statt server.secret wandert
+ * ein Token nur für diese Gesprächs-ID in die Metadaten; der Webhook prüft es.
+ */
+export function conversationToken(conversationId: string): string | null {
+  const secret = process.env.VAPI_WEBHOOK_SECRET;
+  if (!secret) return null;
+  return createHmac('sha256', secret).update(conversationId).digest('hex').slice(0, 32);
 }
 
 /** Öffentliche Basis-URL (für Vapi-Webhooks). */
@@ -169,14 +181,19 @@ export async function buildAssistantConfig(ctx: AssistantContext): Promise<Assis
       chunkPlan: { enabled: true, formatPlan: { enabled: true, replacements: SPOKEN_REPLACEMENTS } },
     },
     transcriber: { provider: 'deepgram', model: s.model.transcriberModel, language: language.deepgram ?? 'de' },
-    metadata: { conversationId: ctx.conversationId, language: language.lang, ...(ctx.refUsername ? { refUsername: ctx.refUsername } : {}) },
+    metadata: {
+      conversationId: ctx.conversationId,
+      language: language.lang,
+      ...(ctx.refUsername ? { refUsername: ctx.refUsername } : {}),
+      ...(conversationToken(ctx.conversationId) ? { token: conversationToken(ctx.conversationId) as string } : {}),
+    },
   };
 
   // Webhook (Gesprächsende-Bericht) und Funktionen (Lead, offene Frage).
+  // Kein server.secret: die Konfiguration geht an den Browser. Der Webhook prüft das Token in den Metadaten.
   if (base) {
-    const secret = process.env.VAPI_WEBHOOK_SECRET;
     cfg.serverMessages = ['end-of-call-report', 'tool-calls'];
-    cfg.server = { url: `${base}/api/vapi/webhook`, timeoutSeconds: 20, ...(secret ? { secret } : {}) };
+    cfg.server = { url: `${base}/api/vapi/webhook`, timeoutSeconds: 20 };
     cfg.model.tools = toolList(s);
   }
   return cfg;

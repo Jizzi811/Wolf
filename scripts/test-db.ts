@@ -94,7 +94,7 @@ async function main() {
   assert(sys.includes('Du bist NOVA') && !sys.includes('Du bist CLOSER'), 'Name im Prompt ersetzt');
   assert(sys.includes('385'), 'Wissen (Brücke) im Prompt');
   assert(sys.includes('nadja'), 'Empfehler im Prompt');
-  assert(cfg.server?.url === 'https://closer-test.example/api/vapi/webhook' && cfg.server.secret === 'test-secret', 'Webhook gesetzt');
+  assert(cfg.server?.url === 'https://closer-test.example/api/vapi/webhook' && cfg.server.secret === undefined && typeof cfg.metadata?.token === 'string' && cfg.metadata.token.length === 32, 'Webhook ohne Geheimnis im Browser, Token je Gespräch in den Metadaten');
   assert(Array.isArray(cfg.model.tools) && cfg.model.tools.length === 2, 'Funktionen erfasse_lead + offene_frage');
   assert(cfg.metadata?.conversationId === 'clsr-20261018-abcdefabcdef', 'Metadaten enthalten Gesprächs-ID');
 

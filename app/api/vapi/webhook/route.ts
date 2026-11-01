@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSettings } from '@/lib/admin/settings';
 import { applyEndOfCallReport } from '@/lib/admin/tracking';
+import { conversationToken } from '@/lib/admin/assistant';
 import { runTool } from '@/lib/admin/tools';
 import { summarizeConversation } from '@/lib/admin/documents';
 import { pushConversationToPlatform } from '@/lib/bridge/outbound';
@@ -50,10 +51,6 @@ function transcriptOf(m: VapiServerMessage['message']): TranscriptEntry[] {
 
 /** Webhook von Vapi: Funktionsaufrufe (Lead, offene Frage) und Gesprächsende-Bericht. */
 export async function POST(req: Request) {
-  const secret = process.env.VAPI_WEBHOOK_SECRET;
-  if (secret && req.headers.get('x-vapi-secret') !== secret) {
-    return new NextResponse(null, { status: 401 });
-  }
   if (!hasDatabase()) return NextResponse.json({ ok: true, reason: 'no_database' });
 
   const body = (await req.json().catch(() => null)) as VapiServerMessage | null;
@@ -62,6 +59,15 @@ export async function POST(req: Request) {
 
   const meta = metadataOf(m);
   const conversationId = meta.conversationId ?? null;
+
+  // Echtheit: entweder das Dashboard-Geheimnis im Header (feste Assistenten) oder
+  // das Token je Gespräch aus den Metadaten (transiente Assistenten aus /api/assistant).
+  const secret = process.env.VAPI_WEBHOOK_SECRET;
+  if (secret) {
+    const headerOk = req.headers.get('x-vapi-secret') === secret;
+    const tokenOk = Boolean(conversationId && meta.token && conversationToken(conversationId) === meta.token);
+    if (!headerOk && !tokenOk) return new NextResponse(null, { status: 401 });
+  }
   const vapiCallId = m.call?.id ?? null;
 
   if (m.type === 'tool-calls') {
