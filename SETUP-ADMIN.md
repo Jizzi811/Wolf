@@ -115,7 +115,16 @@ merkt sich den Empfehler 30 Tage im Browser und gibt ihn mit dem Lead weiter.
 - Aussprache „Kickstartercash Club": Ersetzungen im Vapi-Sprachplan (`lib/closer/brand.ts`),
   Regel im Systemprompt, Normalisierung der Schreibweise im Transkript.
 
-## 7. Lokal testen
+## 7. Anrede (Sie/Du, seit 01.11.2026)
+
+Standard: CLOSER siezt und fragt ganz am Anfang einmal, ob „Sie" oder „du" gewünscht ist
+(nur in Sprachen mit Höflichkeitsform; Englisch, Japanisch, Koreanisch: keine Frage).
+Ohne klare Antwort bleibt es beim Sie; die Wahl gilt für das ganze Gespräch, ein Wechsel
+mitten im Gespräch wird sofort übernommen. Steuerung ohne Code in Vercel:
+`CLOSER_ADDRESS_MODE` = `ask` (Standard) | `sie` | `du`, danach Redeploy.
+Das Feld „Anrede" unter Persona ist nur noch der Rückfall für die Anzeige.
+
+## 8. Lokal testen
 
 ```
 pnpm install

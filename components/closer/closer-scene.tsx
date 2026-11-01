@@ -66,7 +66,7 @@ export function CloserScene({
   const ui = usePublicUi();
   const { language, t } = useLanguage();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const isDe = language.lang === 'de';
+  const isDe = language.lang === 'de' || !ui.uiTranslations;
   const textMode = !language.voice;
 
   const startLabel = isDe ? ui.buttonStart : t.start;

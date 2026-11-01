@@ -243,6 +243,7 @@ function parseSettings(key: SettingsKey, fd: FormData, current: AllSettings): Pa
         publicAccess: bool(fd, 'publicAccess'),
         bridgeAutoSync: bool(fd, 'bridgeAutoSync'),
         useSeedKnowledge: bool(fd, 'useSeedKnowledge'),
+        uiTranslations: bool(fd, 'uiTranslations'),
       } satisfies Partial<AllSettings['features']>;
     case 'privacy':
       return {

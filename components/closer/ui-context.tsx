@@ -24,7 +24,10 @@ interface LanguageCtx {
 const LangCtx = createContext<LanguageCtx>({ language: LANGUAGES[0], t: uiFor('de') });
 
 export function LanguageProvider({ language, children }: { language: CloserLanguage; children: React.ReactNode }) {
-  return <LangCtx.Provider value={{ language, t: uiFor(language.lang) }}>{children}</LangCtx.Provider>;
+  const ui = usePublicUi();
+  // Oberfläche nur Deutsch (Standard), außer der Schalter im Admin ist an.
+  const t = ui.uiTranslations ? uiFor(language.lang) : uiFor('de');
+  return <LangCtx.Provider value={{ language, t }}>{children}</LangCtx.Provider>;
 }
 
 /** Aktive Sprache der Seite und die passenden Oberflächentexte. */
@@ -36,6 +39,6 @@ export function useLanguage(): LanguageCtx {
 export function useStatusText(): Record<'disconnected' | 'connecting' | 'listening' | 'thinking' | 'speaking', string> {
   const ui = usePublicUi();
   const { language, t } = useLanguage();
-  if (language.lang === 'de') return ui.status;
+  if (language.lang === 'de' || !ui.uiTranslations) return ui.status;
   return { disconnected: t.ready, connecting: t.connecting, listening: t.listening, thinking: t.thinking, speaking: t.speaking };
 }

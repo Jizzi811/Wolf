@@ -20,7 +20,7 @@ export interface PersonaSettings {
   language: string;
   /** Voreingestellte Sprache der öffentlichen Seite, wenn Browser/URL nichts vorgeben. */
   defaultLanguage: string;
-  /** Anrede: du oder Sie. */
+  /** Anrede-Rückfall (Anzeige). Die wirksame Anrede steuert CLOSER_ADDRESS_MODE in Vercel: ask (Standard), sie, du. */
   formOfAddress: 'du' | 'Sie';
 }
 
@@ -86,6 +86,8 @@ export interface FeatureSettings {
   bridgeAutoSync: boolean;
   /** Vorhandene Wissensbasis aus dem Code als Rückfall nutzen. */
   useSeedKnowledge: boolean;
+  /** Oberflächentexte (Knöpfe, Status, Hinweise) in der gewählten Sprache statt nur Deutsch. */
+  uiTranslations: boolean;
 }
 
 export interface PrivacySettings {
@@ -114,7 +116,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     systemPrompt: CLOSER_SYSTEM_PROMPT,
     imageUrl: '/closer-orb.png',
     language: 'de',
-    formOfAddress: 'du',
+    formOfAddress: 'Sie',
   },
   voice: {
     provider: '11labs',
@@ -165,6 +167,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     publicAccess: true,
     bridgeAutoSync: true,
     useSeedKnowledge: true,
+    uiTranslations: false,
   },
   privacy: {
     consentText:

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LANGUAGES, nativeName, shortCode, type CloserLanguage } from '@/lib/closer/languages';
-import { uiFor } from '@/lib/closer/i18n';
+import { useLanguage } from './ui-context';
 import { Flag } from './flag';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,7 @@ interface LanguagePickerProps {
 
 /** Sprachauswahl: Suchfeld + Flaggenliste (wie im Header der Plattform), große Kacheln. */
 export function LanguagePicker({ open, value, onSelect, onClose }: LanguagePickerProps) {
-  const t = uiFor(value.lang);
+  const { t } = useLanguage();
   const [q, setQ] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);

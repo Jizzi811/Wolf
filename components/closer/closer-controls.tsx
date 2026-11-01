@@ -32,7 +32,8 @@ export function CloserControls({
   onSendText,
 }: CloserControlsProps) {
   const { language, t } = useLanguage();
-  const endLabel = language.lang === 'de' ? uiText.buttonEnd : t.end;
+  const ui = usePublicUi();
+  const endLabel = language.lang === 'de' || !ui.uiTranslations ? uiText.buttonEnd : t.end;
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div className="flex items-center justify-center gap-3">
@@ -74,8 +75,9 @@ export function CloserControls({
 function CloserTextInput({ onSendText }: { onSendText: (text: string) => void }) {
   const [value, setValue] = useState('');
   const { language, t } = useLanguage();
-  const adminPlaceholder = usePublicUi().textInputPlaceholder;
-  const placeholder = language.lang === 'de' ? adminPlaceholder : t.typeMessage;
+  const ui = usePublicUi();
+  const adminPlaceholder = ui.textInputPlaceholder;
+  const placeholder = language.lang === 'de' || !ui.uiTranslations ? adminPlaceholder : t.typeMessage;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();

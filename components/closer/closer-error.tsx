@@ -2,7 +2,7 @@
 
 import { type CloserErrorKey } from '@/lib/errors';
 import { uiText } from '@/lib/ui-text';
-import { useLanguage } from './ui-context';
+import { useLanguage, usePublicUi } from './ui-context';
 import { cn } from '@/lib/utils';
 
 interface CloserErrorProps {
@@ -18,9 +18,10 @@ interface CloserErrorProps {
  */
 export function CloserError({ errorKey, onRetry, onDismiss, className }: CloserErrorProps) {
   const { language, t } = useLanguage();
+  const ui = usePublicUi();
   if (!errorKey) return null;
   const translated: Partial<Record<CloserErrorKey, string>> = { micDenied: t.micDenied, connectionError: t.offline, sessionEnded: t.sessionEnded };
-  const message = language.lang === 'de' ? uiText.errors[errorKey] : translated[errorKey] ?? uiText.errors[errorKey];
+  const message = language.lang === 'de' || !ui.uiTranslations ? uiText.errors[errorKey] : translated[errorKey] ?? uiText.errors[errorKey];
 
   return (
     <div

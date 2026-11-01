@@ -413,3 +413,82 @@ export function greetingFor(lang: string): string | null {
   const base = lang.startsWith('zh') ? 'zh' : lang.split(/[-_]/)[0].toLowerCase();
   return GREETINGS[base] ?? null;
 }
+
+/** Begrüßung in der höflichen Form (Standard seit 01.11.2026). */
+export const GREETINGS_POLITE: Record<string, string> = {
+  de: 'Herzlich willkommen bei Kickstartercash Club! Ich bin CLOSER, der digitale Assistent der Plattform. Was möchten Sie heute klären, verbessern oder in Bewegung bringen?',
+  en: 'Welcome to Kickstartercash Club! I am CLOSER, the digital assistant of the platform. What would you like to clarify, improve or set in motion today?',
+  tr: 'Kickstartercash Club’a hoş geldiniz! Ben CLOSER, platformun dijital asistanıyım. Bugün neyi netleştirmek, geliştirmek ya da harekete geçirmek istersiniz?',
+  es: '¡Bienvenido a Kickstartercash Club! Soy CLOSER, el asistente digital de la plataforma. ¿Qué le gustaría aclarar, mejorar o poner en marcha hoy?',
+  fr: 'Bienvenue chez Kickstartercash Club ! Je suis CLOSER, l’assistant numérique de la plateforme. Que souhaitez-vous clarifier, améliorer ou mettre en mouvement aujourd’hui ?',
+  it: 'Benvenuto in Kickstartercash Club! Sono CLOSER, l’assistente digitale della piattaforma. Cosa desidera chiarire, migliorare o mettere in moto oggi?',
+  pt: 'Bem-vindo ao Kickstartercash Club! Sou o CLOSER, o assistente digital da plataforma. O que gostaria de esclarecer, melhorar ou pôr em movimento hoje?',
+  nl: 'Welkom bij Kickstartercash Club! Ik ben CLOSER, de digitale assistent van het platform. Wat wilt u vandaag ophelderen, verbeteren of in beweging zetten?',
+  pl: 'Witamy w Kickstartercash Club! Nazywam się CLOSER, jestem cyfrowym asystentem platformy. Co chcieliby Państwo dziś wyjaśnić, ulepszyć albo ruszyć z miejsca?',
+  ru: 'Добро пожаловать в Kickstartercash Club! Я CLOSER, цифровой ассистент платформы. Что вы хотели бы сегодня прояснить, улучшить или сдвинуть с места?',
+  uk: 'Ласкаво просимо до Kickstartercash Club! Я CLOSER, цифровий асистент платформи. Що ви хотіли б сьогодні з’ясувати, покращити або зрушити з місця?',
+  cs: 'Vítejte v Kickstartercash Club! Jsem CLOSER, digitální asistent platformy. Co byste dnes chtěli vyjasnit, zlepšit nebo rozhýbat?',
+  sk: 'Vitajte v Kickstartercash Club! Som CLOSER, digitálny asistent platformy. Čo by ste dnes chceli vyjasniť, zlepšiť alebo rozhýbať?',
+  hu: 'Üdvözöljük a Kickstartercash Clubnál! CLOSER vagyok, a platform digitális asszisztense. Mit szeretne ma tisztázni, javítani vagy elindítani?',
+  ro: 'Bine ați venit la Kickstartercash Club! Sunt CLOSER, asistentul digital al platformei. Ce ați dori să clarificați, să îmbunătățiți sau să puneți în mișcare astăzi?',
+  bg: 'Добре дошли в Kickstartercash Club! Аз съм CLOSER, дигиталният асистент на платформата. Какво бихте искали да изясним, подобрим или задвижим днес?',
+  el: 'Καλώς ήρθατε στην Kickstartercash Club! Είμαι ο CLOSER, ο ψηφιακός βοηθός της πλατφόρμας. Τι θα θέλατε να ξεκαθαρίσουμε, να βελτιώσουμε ή να βάλουμε σε κίνηση σήμερα;',
+  da: 'Velkommen til Kickstartercash Club! Jeg er CLOSER, platformens digitale assistent. Hvad vil De gerne afklare, forbedre eller sætte i gang i dag?',
+  sv: 'Välkommen till Kickstartercash Club! Jag är CLOSER, plattformens digitala assistent. Vad vill ni reda ut, förbättra eller sätta igång idag?',
+  no: 'Velkommen til Kickstartercash Club! Jeg er CLOSER, plattformens digitale assistent. Hva vil De gjerne avklare, forbedre eller sette i gang i dag?',
+  fi: 'Tervetuloa Kickstartercash Clubiin! Olen CLOSER, alustan digitaalinen avustaja. Mitä haluaisitte tänään selvittää, parantaa tai saada liikkeelle?',
+  hi: 'Kickstartercash Club में आपका स्वागत है! मैं CLOSER हूँ, प्लेटफ़ॉर्म का डिजिटल सहायक। आज आप क्या स्पष्ट करना, बेहतर बनाना या शुरू करना चाहेंगे?',
+  id: 'Selamat datang di Kickstartercash Club! Saya CLOSER, asisten digital platform ini. Apa yang ingin Anda perjelas, perbaiki, atau mulai gerakkan hari ini?',
+  ms: 'Selamat datang ke Kickstartercash Club! Saya CLOSER, pembantu digital platform ini. Apa yang anda ingin jelaskan, perbaiki atau gerakkan hari ini?',
+  vi: 'Chào mừng quý vị đến với Kickstartercash Club! Tôi là CLOSER, trợ lý số của nền tảng. Hôm nay quý vị muốn làm rõ, cải thiện hay bắt đầu điều gì?',
+  ja: 'Kickstartercash Clubへようこそ。私はCLOSER、プラットフォームのデジタルアシスタントです。本日は何をはっきりさせ、改善し、動かしたいですか？',
+  ko: 'Kickstartercash Club에 오신 것을 환영합니다! 저는 플랫폼의 디지털 어시스턴트 CLOSER입니다. 오늘 무엇을 명확히 하고, 개선하고, 시작하고 싶으신가요?',
+  zh: '欢迎来到 Kickstartercash Club！我是 CLOSER，平台的数字助理。今天您想理清、改进或推动什么？',
+};
+
+/**
+ * Die eine Frage nach der Anrede (höflich gestellt). Nur für Sprachen mit
+ * Höflichkeits- und Du-Form; Englisch, Japanisch, Koreanisch bekommen keine Frage.
+ */
+export const ADDRESS_QUESTIONS: Record<string, string> = {
+  de: 'Damit ich Sie so anspreche, wie es Ihnen angenehm ist: Möchten Sie lieber mit „Sie“ oder mit „du“ angesprochen werden?',
+  tr: 'Size nasıl hitap etmemi istersiniz: „siz“ mi, yoksa „sen“ mi?',
+  es: 'Para dirigirme a usted como prefiera: ¿prefiere que le hable de usted o de tú?',
+  fr: 'Pour m’adresser à vous comme vous le souhaitez : préférez-vous le vouvoiement ou le tutoiement ?',
+  it: 'Per rivolgermi a Lei come preferisce: preferisce che Le dia del Lei o del tu?',
+  pt: 'Para me dirigir a si como preferir: prefere que o trate por „você“ ou por „tu“?',
+  nl: 'Zodat ik u aanspreek zoals u dat prettig vindt: wilt u liever met „u“ of met „je“ worden aangesproken?',
+  pl: 'Aby zwracać się do Państwa tak, jak jest Państwu wygodnie: woli Pan/Pani formę „Pan/Pani“ czy „ty“?',
+  ru: 'Чтобы обращаться к вам так, как вам удобно: предпочитаете «вы» или «ты»?',
+  uk: 'Щоб звертатися до вас так, як вам зручно: вам ближче «ви» чи «ти»?',
+  cs: 'Abych vás oslovoval tak, jak je vám příjemné: chcete raději vykat, nebo tykat?',
+  sk: 'Aby som vás oslovoval tak, ako je vám príjemné: chcete radšej vykať, alebo tykať?',
+  hu: 'Hogy úgy szólítsam, ahogy Önnek kellemes: a magázást vagy a tegezést részesíti előnyben?',
+  ro: 'Ca să mă adresez așa cum vă este plăcut: preferați să vă vorbesc cu „dumneavoastră“ sau cu „tu“?',
+  bg: 'За да се обръщам към Вас както Ви е приятно: предпочитате „Вие“ или „ти“?',
+  el: 'Για να σας απευθύνομαι όπως σας είναι ευχάριστο: προτιμάτε τον πληθυντικό ευγενείας ή τον ενικό;',
+  da: 'For at tiltale Dem, som De foretrækker: vil De helst tiltales med „De“ eller „du“?',
+  sv: 'För att tilltala er som ni föredrar: vill ni hellre bli tilltalad med „ni“ eller „du“?',
+  no: 'For å tiltale Dem slik De foretrekker: vil De helst bli tiltalt med „De“ eller „du“?',
+  fi: 'Jotta puhuttelen teitä teille sopivalla tavalla: haluatteko mieluummin teitittelyä vai sinuttelua?',
+  hi: 'ताकि मैं आपको आपकी पसंद के अनुसार संबोधित करूँ: क्या आप „आप“ पसंद करेंगे या „तुम“?',
+  id: 'Agar saya menyapa sesuai keinginan: Anda lebih suka disapa dengan „Anda“ atau „kamu“?',
+  ms: 'Supaya saya menyapa mengikut keselesaan anda: anda lebih suka „anda“ atau „kamu“?',
+  vi: 'Để tôi xưng hô theo ý quý vị: quý vị muốn tôi gọi trang trọng hay thân mật?',
+  zh: '为了用您习惯的方式称呼您：您希望我用“您”还是“你”来称呼？',
+};
+
+/** Begrüßung je Modus: ask = höflich + Frage, sie = höflich, du = vertraut. */
+export function greetingForMode(lang: string, mode: 'ask' | 'sie' | 'du', askAllowed: boolean): string | null {
+  const base = lang.startsWith('zh') ? 'zh' : lang.split(/[-_]/)[0].toLowerCase();
+  if (mode === 'du') return GREETINGS[base] ?? null;
+  const polite = GREETINGS_POLITE[base] ?? null;
+  if (!polite) return null;
+  if (mode === 'ask' && askAllowed && ADDRESS_QUESTIONS[base]) {
+    // Begrüßung ohne die eigene Abschlussfrage (letzter Satz), dann die Anrede-Frage als einzige Frage.
+    const sentences = polite.match(/[^.!?。！？]+[.!?。！？]+/gu) ?? [polite];
+    const intro = sentences.filter((x) => !/[?？]\s*$/u.test(x)).join('').replace(/[¿¡]\s*$/u, '').trim();
+    return `${intro} ${ADDRESS_QUESTIONS[base]}`.replace(/\s+/g, ' ').trim();
+  }
+  return polite;
+}

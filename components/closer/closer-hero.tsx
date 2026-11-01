@@ -54,7 +54,7 @@ interface CloserHeroPitchProps {
 export function CloserHeroPitch({ action }: CloserHeroPitchProps) {
   const uiText = usePublicUi();
   const { language, t } = useLanguage();
-  const privacy = language.lang === 'de' ? uiText.privacyNote : t.privacy;
+  const privacy = language.lang === 'de' || !uiText.uiTranslations ? uiText.privacyNote : t.privacy;
   return (
     <div className="flex flex-col">
       {action ? <div className="mb-9">{action}</div> : null}

@@ -6,7 +6,8 @@
  */
 
 import { BRAND, BRAND_PROMPT_RULE, SPOKEN_REPLACEMENTS } from '@/lib/closer/brand';
-import { greetingFor } from '@/lib/closer/i18n';
+import { greetingFor, greetingForMode } from '@/lib/closer/i18n';
+import { addressPromptRule, getAddressMode, hasTvDistinction } from '@/lib/closer/address';
 import { getLanguage, type CloserLanguage } from '@/lib/closer/languages';
 import { buildKnowledgePrompt, getPromptSections } from './knowledge';
 import { getSettings, type AllSettings } from './settings';
@@ -66,10 +67,17 @@ function languageLine(l: CloserLanguage): string {
   return `SPRACHE: Antworte ausschließlich auf ${l.nameDe} (Kennung ${l.lang}). Wechselt die Person dauerhaft die Sprache, wechsle mit. Der Name „CLOSER" und „${BRAND.spoken}" bleiben in jeder Sprache gleich.`;
 }
 
-/** Begrüßung für die Sprache: Admin-Text für Deutsch, sonst Übersetzung, Rückfall Englisch. */
+/**
+ * Begrüßung für Sprache und Anrede-Modus (CLOSER_ADDRESS_MODE: ask | sie | du).
+ * Modus du: der im Admin gepflegte deutsche Text bzw. die Du-Übersetzung.
+ * Modus sie/ask: höfliche Begrüßung; bei ask zusätzlich die eine Frage nach der Anrede
+ * (nur in Sprachen mit Höflichkeitsform).
+ */
 export function greetingForLanguage(s: AllSettings, l: CloserLanguage): string {
-  if (l.lang === 'de' || l.lang === s.persona.language) return s.persona.greeting;
-  return greetingFor(l.lang) ?? greetingFor('en') ?? s.persona.greeting;
+  const mode = getAddressMode();
+  if (mode === 'du' && (l.lang === 'de' || l.lang === s.persona.language)) return s.persona.greeting;
+  const g = greetingForMode(l.lang, mode, hasTvDistinction(l.lang)) ?? greetingForMode('en', mode, false);
+  return g ?? greetingFor(l.lang) ?? s.persona.greeting;
 }
 
 /** Vollständiger Systemtext (Persona + Wissen + Regeln) – für Sprach- und Textmodus. */
@@ -81,10 +89,10 @@ export async function buildSystemContent(ctx: AssistantContext, s?: AllSettings)
   const base = siteBase(ctx.origin);
   const toolsAvailable = Boolean(base) || Boolean(ctx.textMode);
 
+  const addressRule = addressPromptRule(getAddressMode(), language.lang, language.nameDe);
   const voiceNote = ctx.textMode
-    ? `FORMAT: Du antwortest als Text im Chat. Anrede: ${settings.persona.formOfAddress === 'Sie' ? 'Siezen, höflich und respektvoll' : 'Duzen, locker und direkt'}. Kurz und klar: zwei bis fünf Sätze, einfache Absätze, keine Markdown-Zeichen wie Sternchen oder Rauten, keine Emojis, immer nur eine Rückfrage.`
-    : `SPRACHE UND FORMAT: Anrede: ${settings.persona.formOfAddress === 'Sie' ? 'Siezen, höflich und respektvoll' : 'Duzen, locker und direkt'}. ` +
-      'Antworte kurz, natürlich und für Sprachausgabe optimiert: ein bis drei Sätze, keine Aufzählungen, keine Markdown-Formatierung, keine Emojis, immer nur eine Frage.';
+    ? 'FORMAT: Du antwortest als Text im Chat. Kurz und klar: zwei bis fünf Sätze, einfache Absätze, keine Markdown-Zeichen wie Sternchen oder Rauten, keine Emojis, immer nur eine Rückfrage.'
+    : 'FORMAT: Antworte kurz, natürlich und für Sprachausgabe optimiert: ein bis drei Sätze, keine Aufzählungen, keine Markdown-Formatierung, keine Emojis, immer nur eine Frage.';
 
   const disclosure = settings.privacy.aiDisclosure
     ? `KI-OFFENLEGUNG: Sag spätestens bei der ersten inhaltlichen Frage einmal kurz (in der Sprache des Gesprächs): „${settings.privacy.aiDisclosure}" Danach nicht wiederholen, außer jemand fragt.`
@@ -111,6 +119,7 @@ export async function buildSystemContent(ctx: AssistantContext, s?: AllSettings)
     knowledge,
     languageLine(language),
     BRAND_PROMPT_RULE,
+    addressRule,
     voiceNote,
     disclosure,
     leadNote,

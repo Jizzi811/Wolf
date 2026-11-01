@@ -17,7 +17,8 @@ import { getBridgeCache } from '@/lib/bridge/sync';
 import { bridgeSections } from '@/lib/bridge/knowledge-from-bridge';
 import { LANGUAGES, VOICE_LANGUAGES, TEXT_ONLY_LANGUAGES, getLanguage } from '@/lib/closer/languages';
 import { normalizeBrand, BRAND } from '@/lib/closer/brand';
-import { GREETINGS, UI } from '@/lib/closer/i18n';
+import { GREETINGS, UI, greetingForMode, GREETINGS_POLITE, ADDRESS_QUESTIONS } from '@/lib/closer/i18n';
+import { hasTvDistinction, addressPromptRule, getAddressMode } from '@/lib/closer/address';
 import { buildSystemContent } from '@/lib/admin/assistant';
 
 function assert(cond: unknown, msg: string) {
@@ -88,7 +89,7 @@ async function main() {
   // Assistent
   const cfg = await buildAssistantConfig({ conversationId: 'clsr-20261018-abcdefabcdef', refUsername: 'nadja', origin: 'https://x' });
   const sys = cfg.model.messages[0].content;
-  assert(cfg.name === 'NOVA' && cfg.firstMessage === 'Hallo, ich bin Nova.', 'Assistent nutzt Persona');
+  assert(cfg.name === 'NOVA' && cfg.firstMessage.includes('Möchten Sie lieber mit „Sie“'), 'Assistent nutzt Persona-Namen; Begrüßung im Modus ask höflich mit Anrede-Frage');
   assert(cfg.voice.voiceId === 'abc123', 'Assistent nutzt Stimme');
   assert(sys.includes('Du bist NOVA') && !sys.includes('Du bist CLOSER'), 'Name im Prompt ersetzt');
   assert(sys.includes('385'), 'Wissen (Brücke) im Prompt');
@@ -179,6 +180,25 @@ async function main() {
   assert(bs2.sections.some((x) => x.slug === 'bridge-guides' && x.content.includes('Schritt 1: Login')), 'Anleitungen mit Schritten');
   assert(!bs2.sections.some((x) => x.slug === 'bridge-promo'), 'promo available:false wird nicht genannt');
   assert(bs2.sections.some((x) => x.slug === 'bridge-overview' && x.content.includes('Black Card')), 'Funktionsübersicht');
+
+  // Anrede (Zusatzauftrag 01.11.2026)
+  assert(getAddressMode() === 'ask', 'Anrede-Modus ohne Variable = ask');
+  assert(VOICE_LANGUAGES.every((l) => GREETINGS_POLITE[l.lang.startsWith('zh') ? 'zh' : l.lang.split('-')[0]]), 'jede Sprachmodus-Sprache hat eine höfliche Begrüßung');
+  const askDe = greetingForMode('de', 'ask', true)!;
+  assert(askDe.includes('Möchten Sie lieber mit „Sie“ oder mit „du“') && (askDe.match(/\?/g) ?? []).length === 1, 'Deutsch: genau eine Anrede-Frage am Anfang');
+  assert(greetingForMode('en', 'ask', hasTvDistinction('en')) === GREETINGS_POLITE.en, 'Englisch: keine Frage, höflich');
+  assert(!greetingForMode('es', 'ask', true)!.includes('¿ '), 'Spanisch: keine verwaiste Satzzeichen');
+  assert(Object.keys(ADDRESS_QUESTIONS).every((k) => hasTvDistinction(k)), 'Anrede-Fragen nur für Sprachen mit Höflichkeitsform');
+  assert(addressPromptRule('ask', 'de', 'Deutsch').includes('Standard ist die höfliche Form') && addressPromptRule('du', 'de', 'Deutsch').startsWith('ANREDE: Duze'), 'Prompt-Regeln je Modus');
+  const askCfg = await buildAssistantConfig({ conversationId: 'clsr-20261101-abcdefabcdef', lang: 'de', origin: 'https://x' });
+  assert(askCfg.firstMessage === askDe && askCfg.model.messages[0].content.includes('ANREDE: Standard ist die höfliche Form'), 'Sprach-Assistent: Begrüßung mit Anrede-Frage und Regel');
+  process.env.CLOSER_ADDRESS_MODE = 'du';
+  const duCfg = await buildAssistantConfig({ conversationId: 'clsr-20261101-abcdefabcdef', lang: 'de', origin: 'https://x' });
+  assert(duCfg.firstMessage.startsWith('Da bist du ja') && duCfg.model.messages[0].content.includes('ANREDE: Duze'), 'CLOSER_ADDRESS_MODE=du: Du-Begrüßung aus dem Admin');
+  process.env.CLOSER_ADDRESS_MODE = 'sie';
+  const sieCfg = await buildAssistantConfig({ conversationId: 'clsr-20261101-abcdefabcdef', lang: 'fr', origin: 'https://x' });
+  assert(sieCfg.firstMessage === GREETINGS_POLITE.fr && sieCfg.model.messages[0].content.includes('ANREDE: Sieze'), 'CLOSER_ADDRESS_MODE=sie: höflich ohne Frage (Französisch)');
+  delete process.env.CLOSER_ADDRESS_MODE;
 
   console.log('\nAlle Tests bestanden.');
   await client.close();

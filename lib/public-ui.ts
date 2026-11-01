@@ -27,6 +27,8 @@ export interface PublicUi {
   loginRequired: boolean;
   /** Voreingestellte Sprache (Kennung aus lib/closer/languages.ts). */
   defaultLanguage: string;
+  /** Oberflächentexte der gewählten Sprache anpassen (sonst Deutsch). */
+  uiTranslations: boolean;
   design: { accent: string; accentLight: string; accentDark: string; background: string };
 }
 
@@ -48,6 +50,7 @@ export const DEFAULT_PUBLIC_UI: PublicUi = {
   showTranscript: true,
   loginRequired: false,
   defaultLanguage: 'de',
+  uiTranslations: false,
   design: { accent: '#d4a63a', accentLight: '#f3d58a', accentDark: '#8a6420', background: '#0a0a0b' },
 };
 
@@ -83,6 +86,7 @@ export function publicUiFromSettings(s: AllSettings, loggedIn: boolean): PublicU
     showTranscript: s.design.showTranscript,
     loginRequired: !s.features.publicAccess && !loggedIn,
     defaultLanguage: s.persona.defaultLanguage || 'de',
+    uiTranslations: s.features.uiTranslations,
     design: { accent: s.design.accent, accentLight: s.design.accentLight, accentDark: s.design.accentDark, background: s.design.background },
   };
 }

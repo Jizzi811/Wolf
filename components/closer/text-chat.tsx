@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { normalizeBrand } from '@/lib/closer/brand';
-import { uiFor } from '@/lib/closer/i18n';
+import { useLanguage } from './ui-context';
 import type { CloserLanguage } from '@/lib/closer/languages';
 import { Send } from './control-icons';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ interface TextChatProps {
  * Antworten kommen von /api/chat; „Vorlesen" nutzt die Browser-Stimme, falls vorhanden.
  */
 export function TextChat({ language, agentName, refUsername, visitorId, carryOver, onConversation }: TextChatProps) {
-  const t = uiFor(language.lang);
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<ChatMsg[]>(carryOver ?? []);
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
