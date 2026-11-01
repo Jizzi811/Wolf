@@ -151,7 +151,7 @@ async function main() {
   assert(getLanguage('tr').voice && !getLanguage('sw').voice, 'Türkisch Stimme, Swahili nur Text');
   assert(normalizeBrand('Willkommen bei Kickstarter Cash Club und KICKSTARTERCASH.CLUB, siehe https://kickstartercash.club/x') === `Willkommen bei ${BRAND.written} und ${BRAND.written}, siehe https://kickstartercash.club/x`, 'Schreibweise normalisiert, Adresse bleibt');
   const trCfg = await buildAssistantConfig({ conversationId: 'clsr-20261101-abcdefabcdef', lang: 'tr', origin: 'https://x' });
-  assert(trCfg.transcriber.language === 'tr' && trCfg.voice.language === 'tr' && trCfg.firstMessage.startsWith('İşte geldin'), 'Türkisch: Erkennung, Stimme, Begrüßung');
+  assert(trCfg.transcriber.language === 'tr' && trCfg.voice.language === 'tr' && trCfg.firstMessage.includes('hoş geldiniz') && trCfg.firstMessage.includes('„siz“'), 'Türkisch: Erkennung, Stimme, höfliche Begrüßung mit Anrede-Frage');
   assert(trCfg.model.messages[0].content.includes('Antworte ausschließlich auf Türkisch') && trCfg.model.messages[0].content.includes('Kickstartercash Club'), 'Sprachzeile und Aussprache im Prompt');
   assert(Array.isArray(trCfg.voice.chunkPlan?.formatPlan.replacements) && trCfg.voice.chunkPlan!.formatPlan.replacements.length >= 4, 'Ersetzungen für die Aussprache gesetzt');
   const brCfg = await buildAssistantConfig({ conversationId: 'clsr-20261101-abcdefabcdef', lang: 'pt-br', history: 'Nutzer: Hallo', origin: 'https://x' });
