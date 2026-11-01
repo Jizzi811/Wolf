@@ -10,7 +10,7 @@ import type { CloserState } from '@/lib/closer-state';
 
 export const uiText = {
   /** Kleines Label über der Hauptüberschrift. */
-  eyebrow: 'KICKSTARTERCASH.CLUB PRESENTS',
+  eyebrow: 'Kickstartercash.Club präsentiert',
 
   /** Hauptüberschrift, bewusst zweizeilig. */
   heroTitleLine1: 'Triff CLOSER.',
@@ -34,11 +34,11 @@ export const uiText = {
 
   /** Name und kurzer Untertitel des Agenten. */
   agentName: 'CLOSER',
-  agentTagline: 'Johanns digitaler Gesprächspartner',
+  agentTagline: 'Der digitale Assistent von Kickstartercash.Club',
 
   /** Footer-Disclaimer. */
   footer:
-    'CLOSER ist ein KI-gestützter Gesprächspartner von KickstarterCash.club und keine reale Person. Finanzielle, rechtliche und steuerliche Entscheidungen sollten eigenständig geprüft werden.',
+    'CLOSER ist ein KI-Assistent von Kickstartercash.Club und keine reale Person. Finanzielle, rechtliche und steuerliche Entscheidungen sollten eigenständig geprüft werden.',
 
   /** Bedienhinweise / ARIA-Beschriftungen. */
   controls: {

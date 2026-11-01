@@ -70,7 +70,7 @@ ElevenLabs und OpenAI werden nach Nutzung abgerechnet.
   Passwort setzen, deaktivieren, löschen.
 - **Protokoll (nur Admin):** wer hat wann was geändert.
 
-## 3. Eigene Stimme (Nadja oder Johann)
+## 3. Eigene Stimme
 
 1. ElevenLabs → Voices → „Add a new voice“ → Instant Voice Clone: 1 bis 3
    Minuten saubere Aufnahme hochladen (keine Musik, kein Hall).
@@ -101,7 +101,21 @@ Gesprächsstart, wenn der letzte Stand älter als eine Stunde ist.
 Ref-Links: `https://closer-henna.vercel.app/?ref=<benutzername>` – der Agent
 merkt sich den Empfehler 30 Tage im Browser und gibt ihn mit dem Lead weiter.
 
-## 6. Lokal testen
+## 6. Sprachen (seit 01.11.2026)
+
+- Liste: `lib/closer/languages.ts`, 136 Sprachen wie im Header der Plattform. `voice:true` =
+  Sprachmodus (Stimme + Erkennung), sonst Textmodus. Übersetzte Begrüßungen und
+  Oberflächentexte: `lib/closer/i18n.ts` (Basis-Sprache, Rückfall Englisch).
+- Sprachmodus = Schnittmenge aus Deepgram nova-2 und ElevenLabs turbo v2.5: 36 Sprachen.
+  Textmodus: 100 Sprachen. Eine neue Sprache freischalten: in `languages.ts` `voice:true`,
+  `deepgram` und `eleven` eintragen, Begrüßung in `i18n.ts` ergänzen.
+- Voreinstellung: `?lang=xx` im Link → gemerkte Wahl im Browser → Browsersprache →
+  Admin → Persona → „Voreingestellte Sprache der Seite".
+- Textmodus braucht `OPENAI_API_KEY` (bevorzugt) oder `VAPI_PRIVATE_KEY` in Vercel.
+- Aussprache „Kickstartercash Club": Ersetzungen im Vapi-Sprachplan (`lib/closer/brand.ts`),
+  Regel im Systemprompt, Normalisierung der Schreibweise im Transkript.
+
+## 7. Lokal testen
 
 ```
 pnpm install

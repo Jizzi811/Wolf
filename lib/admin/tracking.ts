@@ -33,6 +33,7 @@ export async function startConversation(c: {
   refUsername?: string | null;
   userAgent?: string | null;
   language?: string;
+  channel?: 'web' | 'text';
 }) {
   const d = await db();
   await d
@@ -45,6 +46,7 @@ export async function startConversation(c: {
       refUsername: c.refUsername ?? null,
       userAgent: c.userAgent ?? null,
       language: c.language ?? 'de',
+      channel: c.channel ?? 'web',
     })
     .onConflictDoUpdate({
       target: schema.conversations.conversationId,
@@ -58,6 +60,8 @@ export async function endConversation(c: {
   transcript?: TranscriptEntry[];
   endedReason?: string | null;
   storeTranscript: boolean;
+  /** Textmodus: Gespräch läuft weiter, nur Verlauf und Zähler aktualisieren. */
+  keepOpen?: boolean;
 }) {
   const d = await db();
   const existing = await d.query.conversations.findFirst({ where: eq(schema.conversations.conversationId, c.conversationId) });
@@ -71,7 +75,7 @@ export async function endConversation(c: {
   await d
     .update(schema.conversations)
     .set({
-      endedAt: ended,
+      endedAt: c.keepOpen ? null : ended,
       durationS: duration,
       messagesCount: (c.transcript ?? []).length,
       transcript,

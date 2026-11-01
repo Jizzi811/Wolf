@@ -14,25 +14,33 @@ export interface TranscriptMessage {
   at?: number;
 }
 
+export interface StartOptions {
+  /** Sprachkennung aus lib/closer/languages.ts. */
+  lang: string;
+  /** Zusammenfassung des bisherigen Verlaufs (Sprachwechsel). */
+  history?: string;
+}
+
 export interface UseVapiReturn {
   state: CloserState;
-  /** Lautstärke der Agentenstimme (0..1) für den Visualizer. */
   level: number;
   messages: TranscriptMessage[];
-  /** Laufende (noch nicht finale) Äußerung. */
   partial: { role: 'user' | 'assistant'; text: string } | null;
   isConnected: boolean;
   connecting: boolean;
   isMuted: boolean;
+  isOnline: boolean;
   errorKey: CloserErrorKey | null;
-  start: () => Promise<void>;
+  start: (opts: StartOptions) => Promise<void>;
   stop: () => void;
+  /** Beendet sauber und startet mit neuer Sprache neu; der Verlauf wird mitgegeben. */
+  switchLanguage: (lang: string) => void;
   toggleMute: () => void;
   sendText: (text: string) => void;
   dismissError: () => void;
+  conversationId: string | null;
 }
 
-/** Roh-Form einer Vapi-Nachricht, soweit wir sie auswerten. */
 interface VapiMessage {
   type?: string;
   role?: 'user' | 'assistant' | 'system' | string;
@@ -56,19 +64,23 @@ function storage(): Storage | null {
   }
 }
 
-function visitorId(): string {
+export function visitorId(): string {
   const s = storage();
   const key = 'closer_visitor';
   let v = s?.getItem(key) ?? '';
   if (!v) {
     v = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('');
-    s?.setItem(key, v);
+    try {
+      s?.setItem(key, v);
+    } catch {
+      /* Speicher voll oder gesperrt */
+    }
   }
   return v;
 }
 
 /** Liest ?ref=<benutzername> aus dem Link und merkt ihn 30 Tage. */
-function refUsername(): string | null {
+export function refUsername(): string | null {
   const s = storage();
   const key = 'closer_ref';
   try {
@@ -91,29 +103,34 @@ function refUsername(): string | null {
 
 async function track(body: Record<string, unknown>) {
   try {
-    await fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      keepalive: true,
-    });
+    await fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true });
   } catch {
     /* Statistik darf das Gespräch nie stören */
   }
 }
 
+/** Kurze Zusammenfassung des Verlaufs für den Neustart in anderer Sprache. */
+export function summarizeForHandover(messages: TranscriptMessage[]): string {
+  return messages
+    .slice(-12)
+    .map((m) => `${m.role === 'user' ? 'Nutzer' : 'Agent'}: ${m.text}`)
+    .join('\n')
+    .slice(0, 3500);
+}
+
 /**
- * Kapselt die gesamte Vapi-Logik an einer Stelle (keine doppelten Abos):
- * Verbindungsaufbau, Ereignis-Verdrahtung, Zustände, Mikrofon, Text und Fehler.
- * Der Assistent (Persona, Wissen, Stimme) kommt vom Server (/api/assistant).
+ * Kapselt die gesamte Vapi-Logik: Verbindungsaufbau, Ereignisse, Zustände,
+ * Mikrofon, Text, Fehler, Sprachwechsel. Der Assistent kommt vom Server.
  */
 export function useVapi(): UseVapiReturn {
   const vapiRef = useRef<Vapi | null>(null);
   const userEnded = useRef(false);
   const wasConnected = useRef(false);
-  const conversationId = useRef<string | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
   const startedAt = useRef<number>(0);
   const messagesRef = useRef<TranscriptMessage[]>([]);
+  const pendingRestart = useRef<StartOptions | null>(null);
+  const startRef = useRef<(opts: StartOptions) => Promise<void>>(async () => {});
 
   const [connecting, setConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -123,17 +140,11 @@ export function useVapi(): UseVapiReturn {
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
   const [partial, setPartial] = useState<{ role: 'user' | 'assistant'; text: string } | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const [errorKey, setErrorKey] = useState<CloserErrorKey | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
-  const state: CloserState = !isConnected
-    ? connecting
-      ? 'connecting'
-      : 'disconnected'
-    : speaking
-      ? 'speaking'
-      : thinking
-        ? 'thinking'
-        : 'listening';
+  const state: CloserState = !isConnected ? (connecting ? 'connecting' : 'disconnected') : speaking ? 'speaking' : thinking ? 'thinking' : 'listening';
 
   const pushMessage = useCallback((m: TranscriptMessage) => {
     setMessages((prev) => {
@@ -161,19 +172,24 @@ export function useVapi(): UseVapiReturn {
         setThinking(false);
         setLevel(0);
         setPartial(null);
-        const unexpected = wasConnected.current && !userEnded.current;
-        if (unexpected) setErrorKey('sessionEnded');
-        if (conversationId.current && startedAt.current) {
+        const restart = pendingRestart.current;
+        const unexpected = wasConnected.current && !userEnded.current && !restart;
+        if (unexpected) setErrorKey(navigator.onLine === false ? 'connectionError' : 'sessionEnded');
+        if (conversationIdRef.current && startedAt.current) {
           void track({
             type: 'end',
-            conversationId: conversationId.current,
+            conversationId: conversationIdRef.current,
             durationS: Math.round((Date.now() - startedAt.current) / 1000),
             transcript: messagesRef.current.map((m) => ({ role: m.role, text: m.text, at: m.at })),
-            endedReason: userEnded.current ? 'nutzer-beendet' : unexpected ? 'unerwartet' : 'assistent-beendet',
+            endedReason: restart ? 'sprachwechsel' : userEnded.current ? 'nutzer-beendet' : unexpected ? 'unerwartet' : 'assistent-beendet',
           });
         }
         wasConnected.current = false;
         userEnded.current = false;
+        if (restart) {
+          pendingRestart.current = null;
+          window.setTimeout(() => void startRef.current(restart), 250);
+        }
       });
 
       v.on('speech-start', () => {
@@ -181,7 +197,6 @@ export function useVapi(): UseVapiReturn {
         setThinking(false);
       });
       v.on('speech-end', () => setSpeaking(false));
-
       v.on('volume-level', (volume: number) => setLevel(volume));
 
       v.on('message', (msg: VapiMessage) => {
@@ -189,12 +204,7 @@ export function useVapi(): UseVapiReturn {
         const role: 'user' | 'assistant' = msg.role === 'assistant' ? 'assistant' : 'user';
         if (msg.transcriptType === 'final') {
           setPartial(null);
-          pushMessage({
-            id: `${Date.now()}-${messagesRef.current.length}`,
-            role,
-            text: msg.transcript as string,
-            at: startedAt.current ? Math.round((Date.now() - startedAt.current) / 1000) : undefined,
-          });
+          pushMessage({ id: `${Date.now()}-${messagesRef.current.length}`, role, text: msg.transcript as string, at: startedAt.current ? Math.round((Date.now() - startedAt.current) / 1000) : undefined });
           if (role === 'user') setThinking(true);
         } else {
           setPartial({ role, text: msg.transcript });
@@ -209,74 +219,85 @@ export function useVapi(): UseVapiReturn {
     [pushMessage]
   );
 
-  /** Holt den Assistenten vom Server; fällt bei Problemen auf die eingebaute Konfiguration zurück. */
-  const loadAssistant = useCallback(async (): Promise<{ conversationId: string | null; assistant: AssistantArg }> => {
-    const params = new URLSearchParams();
+  /** Holt den Assistenten vom Server; fällt bei Netzproblemen auf die eingebaute Konfiguration zurück. */
+  const loadAssistant = useCallback(async (opts: StartOptions): Promise<{ conversationId: string | null; assistant: AssistantArg }> => {
     const ref = refUsername();
-    if (ref) params.set('ref', ref);
-    params.set('v', visitorId());
     try {
-      const res = await fetch(`/api/assistant?${params.toString()}`, { cache: 'no-store' });
+      const res = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ lang: opts.lang, ref: ref ?? undefined, v: visitorId(), history: opts.history }),
+      });
       if (res.status === 401) throw Object.assign(new Error('login_required'), { code: 'login_required' });
+      if (res.status === 409) throw Object.assign(new Error('text_only'), { code: 'text_only' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as { conversationId: string; assistant: AssistantArg };
       return { conversationId: json.conversationId, assistant: json.assistant };
     } catch (e) {
-      if ((e as { code?: string }).code === 'login_required') throw e;
+      const code = (e as { code?: string }).code;
+      if (code === 'login_required' || code === 'text_only') throw e;
+      if (opts.lang !== 'de') throw e;
       return { conversationId: null, assistant: buildCloserAssistant() as unknown as AssistantArg };
     }
   }, []);
 
-  const start = useCallback(async () => {
-    setErrorKey(null);
-    if (!PUBLIC_KEY) {
-      setErrorKey('configMissing');
-      return;
-    }
-    if (!isVoiceSupported()) {
-      setErrorKey('browserUnsupported');
-      return;
-    }
-    setConnecting(true);
-    setMessages([]);
-    messagesRef.current = [];
-    setPartial(null);
-    try {
-      if (!vapiRef.current) {
-        const VapiCtor = (await import('@vapi-ai/web')).default;
-        const v = new VapiCtor(PUBLIC_KEY);
-        registerEvents(v);
-        vapiRef.current = v;
-      }
-      userEnded.current = false;
-      setIsMuted(false);
-      let call: Awaited<ReturnType<Vapi['start']>> = null;
-      if (ASSISTANT_ID) {
-        conversationId.current = null;
-        call = await vapiRef.current.start(ASSISTANT_ID);
-      } else {
-        const { conversationId: cid, assistant } = await loadAssistant();
-        conversationId.current = cid;
-        call = await vapiRef.current.start(assistant);
-      }
-      if (conversationId.current) {
-        void track({
-          type: 'start',
-          conversationId: conversationId.current,
-          vapiCallId: call?.id,
-          visitorId: visitorId(),
-          refUsername: refUsername() ?? undefined,
-        });
-      }
-    } catch (err) {
-      if ((err as { code?: string }).code === 'login_required') {
-        window.location.href = `/login?next=${encodeURIComponent('/')}`;
+  const start = useCallback(
+    async (opts: StartOptions) => {
+      setErrorKey(null);
+      if (!PUBLIC_KEY) {
+        setErrorKey('configMissing');
         return;
       }
-      setErrorKey(classifyError(err));
-      setConnecting(false);
-    }
-  }, [registerEvents, loadAssistant]);
+      if (!isVoiceSupported()) {
+        setErrorKey('browserUnsupported');
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        setErrorKey('connectionError');
+        return;
+      }
+      setConnecting(true);
+      if (!opts.history) {
+        setMessages([]);
+        messagesRef.current = [];
+      }
+      setPartial(null);
+      try {
+        if (!vapiRef.current) {
+          const VapiCtor = (await import('@vapi-ai/web')).default;
+          const v = new VapiCtor(PUBLIC_KEY);
+          registerEvents(v);
+          vapiRef.current = v;
+        }
+        userEnded.current = false;
+        setIsMuted(false);
+        let call: Awaited<ReturnType<Vapi['start']>> = null;
+        if (ASSISTANT_ID) {
+          conversationIdRef.current = null;
+          call = await vapiRef.current.start(ASSISTANT_ID);
+        } else {
+          const { conversationId: cid, assistant } = await loadAssistant(opts);
+          conversationIdRef.current = cid;
+          setConversationId(cid);
+          call = await vapiRef.current.start(assistant);
+        }
+        if (conversationIdRef.current) {
+          void track({ type: 'start', conversationId: conversationIdRef.current, vapiCallId: call?.id, visitorId: visitorId(), refUsername: refUsername() ?? undefined });
+        }
+      } catch (err) {
+        const code = (err as { code?: string }).code;
+        if (code === 'login_required') {
+          window.location.href = `/login?next=${encodeURIComponent('/')}`;
+          return;
+        }
+        setErrorKey(code === 'text_only' ? 'generic' : classifyError(err));
+        setConnecting(false);
+      }
+    },
+    [registerEvents, loadAssistant]
+  );
+  startRef.current = start;
 
   const stop = useCallback(() => {
     userEnded.current = true;
@@ -286,6 +307,20 @@ export function useVapi(): UseVapiReturn {
       /* ignore */
     }
   }, []);
+
+  const switchLanguage = useCallback(
+    (lang: string) => {
+      const v = vapiRef.current;
+      if (!v || !wasConnected.current) return;
+      pendingRestart.current = { lang, history: summarizeForHandover(messagesRef.current) };
+      try {
+        v.stop();
+      } catch {
+        pendingRestart.current = null;
+      }
+    },
+    []
+  );
 
   const toggleMute = useCallback(() => {
     const v = vapiRef.current;
@@ -300,11 +335,7 @@ export function useVapi(): UseVapiReturn {
       const v = vapiRef.current;
       const trimmed = text.trim();
       if (!v || !trimmed) return;
-      v.send({
-        type: 'add-message',
-        message: { role: 'user', content: trimmed },
-        triggerResponseEnabled: true,
-      });
+      v.send({ type: 'add-message', message: { role: 'user', content: trimmed }, triggerResponseEnabled: true });
       pushMessage({ id: `${Date.now()}-${messagesRef.current.length}`, role: 'user', text: trimmed, at: startedAt.current ? Math.round((Date.now() - startedAt.current) / 1000) : undefined });
     },
     [pushMessage]
@@ -312,13 +343,21 @@ export function useVapi(): UseVapiReturn {
 
   const dismissError = useCallback(() => setErrorKey(null), []);
 
-  // Seitenaufruf zählen (einmal pro Laden) und Empfehler aus dem Link merken.
+  // Netzstatus, Seitenaufruf, Empfehler.
   useEffect(() => {
+    setIsOnline(navigator.onLine !== false);
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
     const ref = refUsername();
     void track({ type: 'event', name: 'page_view', visitorId: visitorId(), path: window.location.pathname, meta: ref ? { ref } : {} });
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
   }, []);
 
-  // Aufräumen beim Unmount.
   useEffect(() => {
     return () => {
       try {
@@ -330,19 +369,5 @@ export function useVapi(): UseVapiReturn {
     };
   }, []);
 
-  return {
-    state,
-    level,
-    messages,
-    partial,
-    isConnected,
-    connecting,
-    isMuted,
-    errorKey,
-    start,
-    stop,
-    toggleMute,
-    sendText,
-    dismissError,
-  };
+  return { state, level, messages, partial, isConnected, connecting, isMuted, isOnline, errorKey, start, stop, switchLanguage, toggleMute, sendText, dismissError, conversationId };
 }

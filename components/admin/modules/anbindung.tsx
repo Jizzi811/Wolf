@@ -4,7 +4,22 @@ import { getBridgeCache, READ_AREAS } from '@/lib/bridge/sync';
 import { ConfirmButton } from '../action-form';
 import { Badge, Card, Notice, PageHeader, Table, Td, fmtDate } from '../ui';
 
-const AREA_LABEL: Record<string, string> = { health: 'Status', catalog: 'Katalog (Pakete, Karten, Ränge, Provisionen)', webinars: 'Webinare', channels: 'Support-Kanäle', content: 'Inhalte & Texte', knowledge: 'Wissensdatenbank (Kash)' };
+const AREA_LABEL: Record<string, string> = {
+  health: 'Status',
+  catalog: 'Katalog (Pakete, Karten, Ränge, Provisionen)',
+  webinars: 'Webinare',
+  channels: 'Support-Kanäle',
+  content: 'Inhalte & Texte',
+  knowledge: 'Wissens-Datei (kcc-knowledge-1)',
+  overview: 'Funktionsübersicht',
+  relocation: 'Auswandern (Länder, Pakete)',
+  guides: 'Handbuch & Anleitungen',
+  promo: 'Werbemittel',
+  realestate: 'Immobilien',
+  social: 'Social-Kanäle',
+  tour: 'System-Tour (Folien)',
+  learned: 'Gelernte Antworten (Vorrang)',
+};
 
 export async function AnbindungModule() {
   const configured = bridgeConfigured();
@@ -15,7 +30,7 @@ export async function AnbindungModule() {
     <>
       <PageHeader
         title="Plattform-Anbindung"
-        description="Signierte Brücke zu portal.kickstartercash.club (Paket P18). Daraus liest der Agent Preise, Pakete, Karten, Webinare, Kanäle und Texte automatisch; Leads gehen zurück ins CRM."
+        description="Signierte Brücke zu portal.kickstartercash.club (P18 + P18c, Version 1.1.0). Daraus liest der Agent Preise, Pakete, Karten, Webinare, Kanäle, Texte, Handbuch, Auswandern, Immobilien, Werbemittel und die von Nadja freigegebenen Antworten automatisch; Leads und offene Fragen gehen zurück zur Plattform. Vorrang: Gelernte Antworten vor Live-Bereichen vor Wissens-Datei vor Startwissen."
         actions={configured ? <><ConfirmButton action={syncBridgeAction} label="Jetzt abgleichen" hidden={{ force: false }} /><ConfirmButton action={syncBridgeAction} label="Alles neu laden" variant="primary" hidden={{ force: true }} /></> : undefined}
       />
       {!configured ? (

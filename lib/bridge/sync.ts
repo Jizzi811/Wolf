@@ -6,12 +6,16 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { bridgeConfigured, callBridge, type BridgeRoute } from './client';
 
-export const READ_AREAS: BridgeRoute[] = ['catalog', 'webinars', 'channels', 'content', 'knowledge'];
+/** Lese-Bereiche der Brücke. P18 (Basis) + P18c (Version 1.1.0, 01.11.2026). Neue Bereiche hier ergänzen. */
+export const READ_AREAS: BridgeRoute[] = [
+  'catalog', 'webinars', 'channels', 'content', 'knowledge',
+  'overview', 'relocation', 'guides', 'promo', 'realestate', 'social', 'tour', 'learned',
+];
 
 export interface SyncReport {
   configured: boolean;
   health: { status: number; ok: boolean; routes?: Record<string, boolean>; error?: string };
-  areas: Record<string, { status: 'ok' | 'disabled' | 'error' | 'unchanged'; message?: string }>;
+  areas: Record<string, { status: 'ok' | 'disabled' | 'error' | 'unchanged'; message?: string; count?: number; available?: boolean }>;
   syncedAt: string;
 }
 
@@ -82,13 +86,14 @@ export async function syncBridge(opts: { force?: boolean } = {}): Promise<SyncRe
       continue;
     }
     if (changed && changed[area] === false) {
-      report.areas[area] = { status: 'unchanged' };
+      const cached = (await getBridgeCache())[area];
+      report.areas[area] = { status: 'unchanged', ...countEntries(cached?.data) };
       continue;
     }
     const res = await callBridge(area);
     if (res.body?.ok) {
       await upsert(area, { status: 'ok', data: res.body.data ?? null, hash: res.body.hash ?? null, error: null, fetchedAt: new Date() });
-      report.areas[area] = { status: 'ok' };
+      report.areas[area] = { status: 'ok', ...countEntries(res.body.data) };
     } else if (res.status === 403) {
       await upsert(area, { status: 'nicht freigeschaltet', error: null });
       report.areas[area] = { status: 'disabled' };
@@ -118,4 +123,23 @@ export async function getCachedArea<T = unknown>(area: string): Promise<T | null
   const d = await db();
   const row = await d.query.bridgeCache.findFirst({ where: eq(schema.bridgeCache.area, area) });
   return (row?.data as T) ?? null;
+}
+
+/** Zählt die Einträge eines Bereichs (Summe aller Listen auf oberster Ebene, bei Auswandern inkl. Pakete). */
+export function countEntries(data: unknown): { count: number; available: boolean } {
+  if (!data || typeof data !== 'object') return { count: 0, available: false };
+  const d = data as Record<string, unknown>;
+  if (d.available === false) return { count: 0, available: false };
+  let n = 0;
+  for (const v of Object.values(d)) {
+    if (Array.isArray(v)) {
+      n += v.length;
+      for (const item of v) {
+        if (item && typeof item === 'object') {
+          for (const inner of Object.values(item as Record<string, unknown>)) if (Array.isArray(inner)) n += inner.length;
+        }
+      }
+    }
+  }
+  return { count: n, available: true };
 }

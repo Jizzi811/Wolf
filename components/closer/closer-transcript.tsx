@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { type CloserState } from '@/lib/closer-state';
 import { uiText } from '@/lib/ui-text';
-import { usePublicUi } from './ui-context';
+import { usePublicUi, useLanguage, useStatusText } from './ui-context';
+import { normalizeBrand } from '@/lib/closer/brand';
 import { cn } from '@/lib/utils';
 import { type TranscriptMessage } from '@/hooks/use-vapi';
 
@@ -20,7 +21,7 @@ interface CloserTranscriptProps {
  */
 export function CloserTranscript({ state, messages, partial, className }: CloserTranscriptProps) {
   const endRef = useRef<HTMLDivElement>(null);
-  const ui = usePublicUi();
+  const ui = useStatusText();
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' });
@@ -38,7 +39,7 @@ export function CloserTranscript({ state, messages, partial, className }: Closer
       >
         {empty ? (
           <p className="py-6 text-center text-sm text-muted/70">
-            {state === 'thinking' ? ui.status.thinking : ui.status.listening} …
+            {state === 'thinking' ? ui.thinking : ui.listening} …
           </p>
         ) : (
           <>
@@ -64,6 +65,8 @@ function Bubble({
   muted?: boolean;
 }) {
   const isUser = role === 'user';
+  const { t } = useLanguage();
+  const name = usePublicUi().name;
   return (
     <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
       <div
@@ -74,9 +77,9 @@ function Bubble({
         )}
       >
         <span className="mb-0.5 block text-[0.62rem] font-semibold uppercase tracking-wider text-gold/60">
-          {isUser ? 'Du' : uiText.agentName}
+          {isUser ? t.you : name}
         </span>
-        {text}
+        {normalizeBrand(text)}
       </div>
     </div>
   );

@@ -99,7 +99,7 @@ selbst (Vapi `firstMessage`).
 
 ## 7. Orb-Bild ablegen
 
-- Pfad: **`public/johann-orb.png`** (liegt bereits als reales CLOSER-Bild vor).
+- Pfad: **`public/closer-orb.png`** (liegt bereits als reales CLOSER-Bild vor).
 - Zum Austauschen die Datei am selben Pfad ersetzen (quadratisch, ~1024×1024,
   freigestellt/auf Dunkel). Fehlt sie, zeigt die App einen CSS-Fallback-Orb.
 - Ebenfalls ersetzbar: `public/og-image.png`, `app/favicon.ico`.
@@ -188,7 +188,7 @@ pnpm build && pnpm start
 
 ## 13. Was ist noch Platzhalter?
 
-- `public/johann-orb.png`, `public/og-image.png`, `app/favicon.ico` – aus dem
+- `public/closer-orb.png`, `public/og-image.png`, `app/favicon.ico` – aus dem
   gelieferten CLOSER-Bild erzeugt (bei Bedarf ersetzen).
 - `lib/closer/lead-capture.ts` – Lead-Erfassung, **deaktiviert**.
 - Modell/Stimme in `lib/closer/assistant.ts` – gegen dein Vapi-Konto prüfen.

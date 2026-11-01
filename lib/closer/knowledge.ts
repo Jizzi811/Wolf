@@ -1,5 +1,5 @@
 /**
- * Wissensbasis für KickstarterCash.club (KCC).
+ * Wissensbasis für Kickstartercash.Club (KCC). Schreibweise im Text immer „Kickstartercash.Club".
  *
  * QUELLEN UND VERLÄSSLICHKEIT (Stand 18.10.2026):
  *  [FAKT-DB]   Datenbank-Export der Plattform kickstartercash.club vom 18.10.2026
@@ -307,7 +307,7 @@ export function buildKnowledgeContext(k: CompanyKnowledge = KICKSTARTERCASH_KNOW
     : 'Stand der Informationen: unbekannt – es liegen noch keine geprüften Daten vor.';
 
   return [
-    'FREIGEGEBENE WISSENSBASIS ZU KICKSTARTERCASH.CLUB',
+    'FREIGEGEBENE WISSENSBASIS ZU KICKSTARTERCASH.CLUB (gesprochen: Kickstartercash Club)',
     'Nutze ausschließlich die hier bestätigten Fakten. Für alles andere ehrlich sagen, dass die Daten fehlen oder bestätigt werden müssen.',
     'Nenne im Gespräch nur die Details, nach denen gefragt wird – keine Produktlisten vorlesen. ' +
       'Sprich Zahlen aussprechbar aus (zum Beispiel „dreihundertfünfundachtzig Euro", „null Komma fünf Prozent"). ' +

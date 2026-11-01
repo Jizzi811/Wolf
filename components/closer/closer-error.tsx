@@ -2,6 +2,7 @@
 
 import { type CloserErrorKey } from '@/lib/errors';
 import { uiText } from '@/lib/ui-text';
+import { useLanguage } from './ui-context';
 import { cn } from '@/lib/utils';
 
 interface CloserErrorProps {
@@ -16,8 +17,10 @@ interface CloserErrorProps {
  * Rohfehler. role="alert" sorgt für sofortige Ansage durch Screenreader.
  */
 export function CloserError({ errorKey, onRetry, onDismiss, className }: CloserErrorProps) {
+  const { language, t } = useLanguage();
   if (!errorKey) return null;
-  const message = uiText.errors[errorKey];
+  const translated: Partial<Record<CloserErrorKey, string>> = { micDenied: t.micDenied, connectionError: t.offline, sessionEnded: t.sessionEnded };
+  const message = language.lang === 'de' ? uiText.errors[errorKey] : translated[errorKey] ?? uiText.errors[errorKey];
 
   return (
     <div

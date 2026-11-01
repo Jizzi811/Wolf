@@ -34,13 +34,13 @@ Vapi-Anbindung steckt gekapselt in einem einzigen Hook (`hooks/use-vapi.ts`).
 │  ├─ closer/
 │  │  ├─ assistant.ts        # Zentrale Assistenten-Config (Prompt, Modell, Stimme)
 │  │  ├─ system-prompt.ts    # Vollständiger CLOSER-Systemprompt
-│  │  ├─ knowledge.ts        # Wissensbasis KickstarterCash.club (Membership, Karten, Gebühren, Karriereplan)
+│  │  ├─ knowledge.ts        # Wissensbasis Kickstartercash.Club
 │  │  └─ lead-capture.ts     # Lead-Erfassung (deaktivierter Platzhalter)
 │  ├─ closer-state.ts        # Visuelle Zustände
 │  ├─ ui-text.ts             # Alle UI-Texte zentral
 │  └─ errors.ts              # Nutzerfreundliche Fehlerklassifizierung
 ├─ app-config.ts             # Branding/Feature-Konfiguration
-├─ public/johann-orb.png     # Orb-Bild (reales CLOSER-Motiv)
+├─ public/closer-orb.png     # Orb-Bild (reales CLOSER-Motiv)
 └─ SETUP-CLOSER.md           # Ausführliche Einrichtungs-/Betriebsanleitung
 ```
 
@@ -59,7 +59,7 @@ Details, Stimme/Modell ändern, Fehlerdiagnose und Produktion:
 
 ## Das Orb-Bild
 
-Die zentrale Figur wird aus `public/johann-orb.png` geladen. Zum Austauschen die
+Die zentrale Figur wird aus `public/closer-orb.png` geladen. Zum Austauschen die
 Datei am selben Pfad ersetzen. Fehlt sie, greift automatisch ein CSS-Fallback-Orb.
 
 ## Wichtige Grenzen (bewusst so gebaut)

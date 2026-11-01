@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Mic, MicOff, PhoneOff, Send, TextT } from './control-icons';
 import { Button } from '@/components/ui/button';
 import { uiText } from '@/lib/ui-text';
-import { usePublicUi } from './ui-context';
+import { usePublicUi, useLanguage } from './ui-context';
 import { cn } from '@/lib/utils';
 
 interface CloserControlsProps {
@@ -31,6 +31,8 @@ export function CloserControls({
   supportsChatInput,
   onSendText,
 }: CloserControlsProps) {
+  const { language, t } = useLanguage();
+  const endLabel = language.lang === 'de' ? uiText.buttonEnd : t.end;
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <div className="flex items-center justify-center gap-3">
@@ -60,7 +62,7 @@ export function CloserControls({
 
         <Button variant="danger" size="default" onClick={onEnd} aria-label={uiText.controls.endCall}>
           <PhoneOff />
-          <span className="hidden sm:inline">{uiText.buttonEnd}</span>
+          <span className="hidden sm:inline">{endLabel}</span>
         </Button>
       </div>
 
@@ -71,7 +73,9 @@ export function CloserControls({
 
 function CloserTextInput({ onSendText }: { onSendText: (text: string) => void }) {
   const [value, setValue] = useState('');
-  const placeholder = usePublicUi().textInputPlaceholder;
+  const { language, t } = useLanguage();
+  const adminPlaceholder = usePublicUi().textInputPlaceholder;
+  const placeholder = language.lang === 'de' ? adminPlaceholder : t.typeMessage;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();

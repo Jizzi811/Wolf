@@ -17,7 +17,7 @@ export default async function Page() {
   return (
     <>
       <style>{`:root{--color-gold:${d.accent};--color-gold-light:${d.accentLight};--color-gold-dark:${d.accentDark};--color-ink:${d.background};}`}</style>
-      <div className="absolute right-4 top-4 z-10 flex items-center gap-3 text-xs text-muted/80">
+      <div className="absolute right-4 top-4 z-10 flex h-11 items-center gap-3 text-xs text-muted/80">
         {user ? (
           <>
             <span className="hidden sm:inline">{user.name || user.email}</span>
