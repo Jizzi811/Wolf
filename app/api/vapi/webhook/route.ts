@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSettings } from '@/lib/admin/settings';
-import { applyEndOfCallReport, createLead, recordOpenQuestion } from '@/lib/admin/tracking';
+import { applyEndOfCallReport } from '@/lib/admin/tracking';
+import { conversationToken } from '@/lib/admin/assistant';
+import { runTool } from '@/lib/admin/tools';
 import { summarizeConversation } from '@/lib/admin/documents';
-import { pushConversationToPlatform, pushFeedbackToPlatform, pushLeadToPlatform } from '@/lib/bridge/outbound';
+import { pushConversationToPlatform } from '@/lib/bridge/outbound';
 import { db, hasDatabase, schema } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import type { TranscriptEntry } from '@/lib/db/schema';
@@ -49,10 +51,6 @@ function transcriptOf(m: VapiServerMessage['message']): TranscriptEntry[] {
 
 /** Webhook von Vapi: Funktionsaufrufe (Lead, offene Frage) und Gesprächsende-Bericht. */
 export async function POST(req: Request) {
-  const secret = process.env.VAPI_WEBHOOK_SECRET;
-  if (secret && req.headers.get('x-vapi-secret') !== secret) {
-    return new NextResponse(null, { status: 401 });
-  }
   if (!hasDatabase()) return NextResponse.json({ ok: true, reason: 'no_database' });
 
   const body = (await req.json().catch(() => null)) as VapiServerMessage | null;
@@ -61,10 +59,18 @@ export async function POST(req: Request) {
 
   const meta = metadataOf(m);
   const conversationId = meta.conversationId ?? null;
+
+  // Echtheit: entweder das Dashboard-Geheimnis im Header (feste Assistenten) oder
+  // das Token je Gespräch aus den Metadaten (transiente Assistenten aus /api/assistant).
+  const secret = process.env.VAPI_WEBHOOK_SECRET;
+  if (secret) {
+    const headerOk = req.headers.get('x-vapi-secret') === secret;
+    const tokenOk = Boolean(conversationId && meta.token && conversationToken(conversationId) === meta.token);
+    if (!headerOk && !tokenOk) return new NextResponse(null, { status: 401 });
+  }
   const vapiCallId = m.call?.id ?? null;
 
   if (m.type === 'tool-calls') {
-    const settings = await getSettings();
     const calls: VapiToolCall[] = m.toolCallList ?? (m.toolWithToolCallList ?? []).map((t) => t.toolCall).filter((t): t is VapiToolCall => Boolean(t));
     const results: { toolCallId: string; result: string }[] = [];
     for (const call of calls) {
@@ -74,51 +80,8 @@ export async function POST(req: Request) {
       if (typeof a === 'string') {
         try { args = JSON.parse(a) as Record<string, unknown>; } catch { args = {}; }
       } else if (a && typeof a === 'object') args = a;
-
-      try {
-        if (name === 'erfasse_lead') {
-          if (!settings.features.leadCapture) {
-            results.push({ toolCallId: call.id, result: 'Lead-Erfassung ist deaktiviert. Bitte auf die Website verweisen.' });
-            continue;
-          }
-          const consent = args.consent === true || args.consent === 'true';
-          const email = String(args.email ?? '').trim().toLowerCase();
-          const firstName = String(args.vorname ?? '').trim();
-          if (!consent) {
-            results.push({ toolCallId: call.id, result: 'Nicht gespeichert: Es fehlt die ausdrückliche Zustimmung. Bitte den Einwilligungstext vorlesen und auf ein klares Ja warten.' });
-            continue;
-          }
-          if (!firstName || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-            results.push({ toolCallId: call.id, result: 'Nicht gespeichert: Vorname oder E-Mail-Adresse fehlen oder sind ungültig. Bitte noch einmal erfragen.' });
-            continue;
-          }
-          const lead = await createLead({
-            conversationId,
-            firstName,
-            lastName: String(args.nachname ?? '').trim() || null,
-            email,
-            phone: String(args.telefon ?? '').trim() || null,
-            interest: String(args.anliegen ?? '').trim() || null,
-            sponsorUsername: meta.refUsername ?? null,
-            consent: true,
-            consentText: settings.privacy.consentText,
-          });
-          if (settings.features.leadsToPlatform) await pushLeadToPlatform(lead).catch(() => null);
-          results.push({ toolCallId: call.id, result: 'Gespeichert. Sag kurz, dass sich das Team bzw. der Empfehler per E-Mail meldet.' });
-        } else if (name === 'offene_frage') {
-          const frage = String(args.frage ?? '').trim();
-          if (frage) {
-            await recordOpenQuestion(frage);
-            if (settings.features.feedbackToPlatform) await pushFeedbackToPlatform(frage, 'de', conversationId).catch(() => null);
-          }
-          results.push({ toolCallId: call.id, result: 'Notiert. Sag ehrlich, dass du das nicht sicher weißt und das Team es nachträgt.' });
-        } else {
-          results.push({ toolCallId: call.id, result: 'Unbekannte Funktion.' });
-        }
-      } catch (e) {
-        console.error('tool-call', name, e);
-        results.push({ toolCallId: call.id, result: 'Technischer Fehler beim Speichern. Bitte auf die Website verweisen.' });
-      }
+      const result = await runTool(name, args, { conversationId, refUsername: meta.refUsername ?? null, language: meta.language ?? 'de' });
+      results.push({ toolCallId: call.id, result });
     }
     return NextResponse.json({ results });
   }

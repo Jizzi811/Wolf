@@ -1,6 +1,6 @@
 'use client';
 
-import { usePublicUi } from './ui-context';
+import { usePublicUi, useLanguage } from './ui-context';
 
 /** Kleiner goldener Aufzählungspunkt (Diamant). */
 function Bullet() {
@@ -25,7 +25,7 @@ export function CloserHeroHeadline() {
   const uiText = usePublicUi();
   return (
     <div className="flex flex-col">
-      <p className="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-gold/80">
+      <p className="font-mono text-[0.7rem] font-semibold tracking-[0.25em] text-gold/80">
         {uiText.eyebrow}
       </p>
 
@@ -53,6 +53,8 @@ interface CloserHeroPitchProps {
  */
 export function CloserHeroPitch({ action }: CloserHeroPitchProps) {
   const uiText = usePublicUi();
+  const { language, t } = useLanguage();
+  const privacy = language.lang === 'de' || !uiText.uiTranslations ? uiText.privacyNote : t.privacy;
   return (
     <div className="flex flex-col">
       {action ? <div className="mb-9">{action}</div> : null}
@@ -83,7 +85,7 @@ export function CloserHeroPitch({ action }: CloserHeroPitchProps) {
             strokeLinejoin="round"
           />
         </svg>
-        {uiText.privacyNote}
+        {privacy}
       </p>
     </div>
   );

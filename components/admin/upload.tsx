@@ -87,14 +87,14 @@ export function ImageUpload({ name, defaultValue, blobReady }: { name: string; d
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
       <div className="relative h-32 w-32 flex-none overflow-hidden rounded-full border border-gold/30 bg-ink">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url || '/johann-orb.png'} alt="" className="h-full w-full object-contain" />
+        <img src={url || '/closer-orb.png'} alt="" className="h-full w-full object-contain" />
       </div>
       <div className="flex flex-col gap-2">
         <input type="hidden" name={name} value={url} />
         <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={() => inputRef.current?.click()} disabled={!blobReady || busy}>{busy ? 'Lädt …' : 'Bild hochladen'}</Button>
-          <Button variant="ghost" onClick={() => setUrl('/johann-orb.png')}>Standardbild</Button>
+          <Button variant="ghost" onClick={() => setUrl('/closer-orb.png')}>Standardbild</Button>
         </div>
         <input
           type="url"

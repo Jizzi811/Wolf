@@ -16,8 +16,11 @@ export interface PersonaSettings {
   /** Vollständiger Charakter-/Regel-Prompt (ohne Wissensbasis). */
   systemPrompt: string;
   imageUrl: string;
+  /** Sprache der Standardbegrüßung/Prompt (Code, meist de). */
   language: string;
-  /** Anrede: du oder Sie. */
+  /** Voreingestellte Sprache der öffentlichen Seite, wenn Browser/URL nichts vorgeben. */
+  defaultLanguage: string;
+  /** Anrede-Rückfall (Anzeige). Die wirksame Anrede steuert CLOSER_ADDRESS_MODE in Vercel: ask (Standard), sie, du. */
   formOfAddress: 'du' | 'Sie';
 }
 
@@ -83,6 +86,8 @@ export interface FeatureSettings {
   bridgeAutoSync: boolean;
   /** Vorhandene Wissensbasis aus dem Code als Rückfall nutzen. */
   useSeedKnowledge: boolean;
+  /** Oberflächentexte (Knöpfe, Status, Hinweise) in der gewählten Sprache statt nur Deutsch. */
+  uiTranslations: boolean;
 }
 
 export interface PrivacySettings {
@@ -104,12 +109,14 @@ export const DEFAULT_SETTINGS: AllSettings = {
   persona: {
     name: 'CLOSER',
     tagline: uiText.agentTagline,
+    /* Standardsprache der Seite (Kennung aus lib/closer/languages.ts). */
+    defaultLanguage: 'de',
     greeting:
-      'Da bist du ja. Ich bin CLOSER, Johanns digitaler Gesprächspartner. Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?',
+      'Da bist du ja. Ich bin CLOSER, der digitale Assistent von Kickstartercash Club. Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?',
     systemPrompt: CLOSER_SYSTEM_PROMPT,
-    imageUrl: '/johann-orb.png',
+    imageUrl: '/closer-orb.png',
     language: 'de',
-    formOfAddress: 'du',
+    formOfAddress: 'Sie',
   },
   voice: {
     provider: '11labs',
@@ -138,7 +145,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     features: [...uiText.features],
     privacyNote: uiText.privacyNote,
     footer: uiText.footer,
-    pageTitle: 'CLOSER – Der Voice Agent von KickstarterCash.club',
+    pageTitle: 'CLOSER – Der digitale Assistent von Kickstartercash.Club',
     pageDescription: 'Ein charismatischer KI-Gesprächspartner für Business, Motivation und Klartext.',
     statusDisconnected: uiText.status.disconnected,
   },
@@ -160,6 +167,7 @@ export const DEFAULT_SETTINGS: AllSettings = {
     publicAccess: true,
     bridgeAutoSync: true,
     useSeedKnowledge: true,
+    uiTranslations: false,
   },
   privacy: {
     consentText:
@@ -185,6 +193,26 @@ function merge<T extends object>(base: T, patch: unknown): T {
   return out as T;
 }
 
+/**
+ * Alte Standardtexte (vor dem 01.11.2026: „Johanns digitaler Gesprächspartner", altes Orb-Bild),
+ * die eventuell schon in der Datenbank gespeichert wurden, auf den neuen Stand heben.
+ * Eigene Texte von Nadja bleiben unberührt.
+ */
+const LEGACY_PERSONA: { field: keyof PersonaSettings; old: RegExp; now: () => string }[] = [
+  { field: 'greeting', old: /Johanns digitaler Gesprächspartner/i, now: () => DEFAULT_SETTINGS.persona.greeting },
+  { field: 'tagline', old: /Johanns digitaler Gesprächspartner/i, now: () => DEFAULT_SETTINGS.persona.tagline },
+  { field: 'imageUrl', old: /^\/johann-orb\.png$/i, now: () => DEFAULT_SETTINGS.persona.imageUrl },
+  { field: 'systemPrompt', old: /Johanns charismatischer Voice Agent/i, now: () => DEFAULT_SETTINGS.persona.systemPrompt },
+];
+
+function applyLegacyFixes(all: AllSettings): AllSettings {
+  for (const fix of LEGACY_PERSONA) {
+    const cur = all.persona[fix.field];
+    if (typeof cur === 'string' && fix.old.test(cur)) (all.persona as unknown as Record<string, string>)[fix.field] = fix.now();
+  }
+  return all;
+}
+
 /** Liest alle Einstellungen (Standardwerte + gespeicherte Überschreibungen). */
 export async function getSettings(): Promise<AllSettings> {
   if (!hasDatabase()) return DEFAULT_SETTINGS;
@@ -201,7 +229,7 @@ export async function getSettings(): Promise<AllSettings> {
         );
       }
     }
-    return out;
+    return applyLegacyFixes(out);
   } catch {
     return DEFAULT_SETTINGS;
   }

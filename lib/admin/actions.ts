@@ -21,6 +21,7 @@ import { countUsers, createUser, findUserByEmail, touchLogin, updateUser } from 
 import { pushLeadToPlatform } from '@/lib/bridge/outbound';
 import { syncBridge } from '@/lib/bridge/sync';
 import type { Role } from '@/lib/db/schema';
+import { isKnownLanguage } from '@/lib/closer/languages';
 
 export interface ActionResult {
   ok: boolean;
@@ -180,6 +181,7 @@ function parseSettings(key: SettingsKey, fd: FormData, current: AllSettings): Pa
         systemPrompt: str(fd, 'systemPrompt', 60000).trim() || DEFAULT_SETTINGS.persona.systemPrompt,
         imageUrl: str(fd, 'imageUrl', 500).trim() || DEFAULT_SETTINGS.persona.imageUrl,
         language: str(fd, 'language', 10).trim() || 'de',
+        defaultLanguage: isKnownLanguage(str(fd, 'defaultLanguage', 12).trim()) ? str(fd, 'defaultLanguage', 12).trim() : 'de',
         formOfAddress: str(fd, 'formOfAddress', 5) === 'Sie' ? 'Sie' : 'du',
       } satisfies Partial<AllSettings['persona']>;
     case 'voice': {
@@ -241,6 +243,7 @@ function parseSettings(key: SettingsKey, fd: FormData, current: AllSettings): Pa
         publicAccess: bool(fd, 'publicAccess'),
         bridgeAutoSync: bool(fd, 'bridgeAutoSync'),
         useSeedKnowledge: bool(fd, 'useSeedKnowledge'),
+        uiTranslations: bool(fd, 'uiTranslations'),
       } satisfies Partial<AllSettings['features']>;
     case 'privacy':
       return {

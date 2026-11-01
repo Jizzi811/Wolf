@@ -18,6 +18,8 @@ export async function EinstellungenModule() {
     { key: 'ELEVENLABS_API_KEY', ok: Boolean(process.env.ELEVENLABS_API_KEY), note: 'Stimmenliste mit Hörproben im Admin' },
     { key: 'KCC_BRIDGE_URL + KCC_BRIDGE_SECRET', ok: bridgeConfigured(), note: 'Plattform-Brücke (Schlüssel aus Plattform-Admin → CLOSER-Anbindung)' },
     { key: 'CRON_SECRET', ok: Boolean(process.env.CRON_SECRET), note: 'Optional: schützt den täglichen Abgleich' },
+    { key: 'CLOSER_ADDRESS_MODE', ok: Boolean(process.env.CLOSER_ADDRESS_MODE), note: `Anrede: ask = siezen und am Anfang fragen (Standard, auch wenn leer), sie = immer siezen, du = immer duzen. Aktuell: ${process.env.CLOSER_ADDRESS_MODE || 'ask (Standard)'}` },
+    { key: 'VAPI_PRIVATE_KEY', ok: Boolean(process.env.VAPI_PRIVATE_KEY), note: 'Optional: Rückfall für den Textmodus ohne OPENAI_API_KEY' },
     { key: 'AUTH_SECRET', ok: Boolean(process.env.AUTH_SECRET), note: 'Optional: fester Schlüssel für Login-Sitzungen (sonst automatisch in der Datenbank)' },
   ];
   return (
@@ -35,6 +37,7 @@ export async function EinstellungenModule() {
             <Toggle name="feedbackToPlatform" label="Offene Fragen an die Plattform senden" hint="Route feedback (Wissensdatenbank von Kash)." defaultChecked={s.features.feedbackToPlatform} />
             <Toggle name="bridgeAutoSync" label="Brücke automatisch abgleichen" hint="Täglich und bei Gesprächsstart, wenn älter als eine Stunde." defaultChecked={s.features.bridgeAutoSync} />
             <Toggle name="useSeedKnowledge" label="Startwissen aus dem Code als Rückfall" hint="Nur relevant, solange keine Abschnitte in der Datenbank liegen." defaultChecked={s.features.useSeedKnowledge} />
+            <Toggle name="uiTranslations" label="Oberflächentexte in der gewählten Sprache" hint="Aus: Knöpfe, Status und Hinweise bleiben Deutsch; der Agent spricht trotzdem die gewählte Sprache. An: Oberfläche folgt der Sprache (28 Sprachen, sonst Englisch)." defaultChecked={s.features.uiTranslations} />
           </ActionForm>
         </Card>
         <div className="flex flex-col gap-4">

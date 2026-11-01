@@ -58,14 +58,14 @@ lib/closer/lead-capture.ts  Lead-Erfassung, deaktivierter Platzhalter (LEAD_CAPT
 lib/closer-state.ts       visuelle Zustände
 lib/ui-text.ts            alle UI-Texte
 app-config.ts             Branding (companyName, productName, Farben, Orb-Bild, startButtonText)
-public/johann-orb.png     Orb-Bild
+public/closer-orb.png     Orb-Bild
 SETUP-CLOSER.md, README.md
 ```
 
 ### Assistenten-Konfiguration (lib/closer/assistant.ts)
 
 - Name: CLOSER, `firstMessageMode: assistant-speaks-first`
-- Begrüßung: „Da bist du ja. Ich bin CLOSER, Johanns digitaler Gesprächspartner. Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?"
+- Begrüßung: „Da bist du ja. Ich bin CLOSER, der digitale Assistent von Kickstartercash Club. Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?"
 - Modell: OpenAI `gpt-4o-mini`, temperature 0.8
 - Stimme: ElevenLabs (`11labs`), voiceId `BDqe1qZiwPi7xspRxTgh`, Modell `eleven_turbo_v2_5`, language `de`, stability 0.45, similarityBoost 0.8, style 0.35, speakerBoost an, speed 1.0
 - Transcriber: Deepgram `nova-2`, language `de`
@@ -81,7 +81,7 @@ Struktur: `KICKSTARTERCASH_SECTIONS: KnowledgeSection[]` mit `id`, `title`, `con
 
 Abschnitte und Kerninhalte:
 
-1. **company**: Kickstartercash.Club = exklusive Membership-Plattform für digitale Unternehmer, Creator, Networker. Slogan „Exclusivity starts with your membership!". Gründer Johann. Ökosystem mit Hubs: Banking, Cards, Investment, Academy, KI, Lifestyle (Immobilien, Adventure, Beauty, Gesundheit), Premium Shop, Fanshop, Videothek, Social Hub, Charity Impact (Global Ledger). Community mit Events, Portal in 70+ Sprachen. Kein Finanzinstitut, keine Bank, kein regulierter Vermögensverwalter; im algorithmischen Kryptohandel tätig, agiert als Club.
+1. **company**: Kickstartercash.Club = exklusive Membership-Plattform für digitale Unternehmer, Creator, Networker. Slogan „Exclusivity starts with your membership!". Betreiber: das Team von Kickstartercash.Club (keine Personen werden genannt). Ökosystem mit Hubs: Banking, Cards, Investment, Academy, KI, Lifestyle (Immobilien, Adventure, Beauty, Gesundheit), Premium Shop, Fanshop, Videothek, Social Hub, Charity Impact (Global Ledger). Community mit Events, Portal in 70+ Sprachen. Kein Finanzinstitut, keine Bank, kein regulierter Vermögensverwalter; im algorithmischen Kryptohandel tätig, agiert als Club.
 2. **membership**: 385 € einmalig, enthält aktuell NUR die Premium Black Card. KI-Plattform (Marketing-Tools, Content-Automatisierung, Funnel-Optimierung, Agenten-System, Design/Video Studio, Social, Analytics, SEO, Agenten-Builder) ist NICHT enthalten, wird separat angeboten, Details offen. Webinar nennt „Premium VIP Gold Membership" / „VIP Gold + KI-Masterclass", 30+ Premium-Features, Lifetime. Zugang dreistufig: kostenlos, Member-Vergünstigung, Premium per Vouchercode.
 3. **cards-black** (PayMago): Premium Black Card (Mastercard Debit, Euro-IBAN, Multi-Currency, Exchange, SEPA/SWIFT, Apple/Google Pay, kein Cashback, kein DEX) 385 € in Membership oder 299 € einzeln. Deluxe Black Card: plus DEX/WEX, Cashback, erweiterte Exchange, 460 € separat. KYC vor Ausstellung, App iOS/Android + Web-App.
 4. **fees-limits**: Privat: Onboarding 15 €, IBAN 0,60 €/Monat, SEPA 4,50 €, SWIFT 0,375 % min. 45 €, Monitoring 0,12 €, intern 0,23 €, Karte 3 €/Monat, Inaktivität nach 3 Monaten 12 €, pro Kartentransaktion 0,53 €. Business: Onboarding 300 €, IBAN 60 €/Monat, SEPA 0,30 % min. 4,50 €, SWIFT 0,30 % min. 52,50 €, intern 0,15 % min. 4,50 €. Limits: Ein-/Auszahlung je max. 50.000 €, mehr nach KYC/AML.
@@ -198,7 +198,7 @@ Plattform > Plattform-Code > Aussagen der Betreiberin > ältere Quellen.
 2. Anbindung an die Support-Blase: Kanal „KI Berater" als Link auf CLOSER (sofort möglich), Einbettung per Skript, oder signierte Schnittstelle mit `catalog`- und `lead`-Routen (empfohlen, mittelfristig).
 3. Firmenname und Einlagensicherungs-Aussage freigeben.
 4. Anrede im Voice Agent: CLOSER duzt, die Plattform siezt in Marketing-Texten.
-5. Ob „Johann" als Gründer/Gesicht von CLOSER bleibt (die Plattform nennt Nadja als Betreiberin).
+5. Gesicht von CLOSER: ENTSCHIEDEN 01.11.2026 – nein, CLOSER ist der digitale Assistent von Kickstartercash.Club, keine Person wird genannt.
 
 ## 7. Admin-Modul im CLOSER-Projekt (umgesetzt 18.10.2026, PR #12)
 
@@ -233,3 +233,28 @@ getrennt von Admin/Team/User der PHP-Plattform. Einrichtung und Bedienung: `SETU
   später `KCC_BRIDGE_URL`/`KCC_BRIDGE_SECRET`; danach Redeploy und `/setup`.
 - **Für den Plattform-Chat:** Kanal „KI Berater“ als Link auf `https://closer-henna.vercel.app/?ref=<benutzername>`
   (Benutzername des angemeldeten Mitglieds, falls ohne Eingriff in den Injektor möglich).
+
+## 8. Umsetzung des Auftrags vom 01.11.2026 (v5, Branch claude/happy-cori-huugor, PR gegen persona/closer)
+
+- **Identität:** CLOSER ist der digitale Assistent von Kickstartercash.Club. Kein „Johann" mehr in
+  Code, Texten, Prompt, Begrüßung, Bild (`public/closer-orb.png`) und Doku. Alte Standardtexte, die
+  schon in der Datenbank liegen, werden beim Lesen automatisch angehoben (`lib/admin/settings.ts`).
+- **Name:** geschrieben „Kickstartercash.Club", gesprochen „Kickstartercash Club" (`lib/closer/brand.ts`):
+  Vapi-Sprachplan-Ersetzungen, Prompt-Regel, Normalisierung im Transkript und im Textmodus.
+- **Sprachen:** 136 Sprachen aus dem Plattform-Header (`lib/closer/languages.ts`): 36 im Sprachmodus
+  (Deepgram nova-2 × ElevenLabs turbo v2.5), 100 im Textmodus (`/api/chat`, OpenAI mit Funktionen,
+  Rückfall Vapi-Chat). Sprachauswahl vor dem Start (Suche + Flaggenliste), Flagge oben links neben dem
+  Namen, Wechsel mitten im Gespräch mit Verlaufs-Übergabe, Voreinstellung `?lang=` → Speicher →
+  Browser → Admin. Begrüßungen und Oberflächentexte in 28 Basissprachen (`lib/closer/i18n.ts`).
+- **Ehrlichkeit:** Prompt-Abschnitt „Was ich nicht kann oder nicht darf", Firmenname/Einlagensicherung
+  nie, Inhaber nie, Funktion `offene_frage` meldet Lücken (ohne Namen, mit Sprache) → Route `feedback`.
+- **Brücke P18c:** Bereiche overview, relocation, guides, promo, realestate, social, tour, learned werden
+  mit geladen (`lib/bridge/sync.ts`, `lib/bridge/knowledge-from-bridge.ts`). Vorrang: learned > Live-
+  Bereiche > Wissens-Datei (knowledge) > Startwissen. Abgleich: stündlich bei Gesprächsstart (changes),
+  nachts 03:00 kompletter Abgleich (Vercel-Cron, `?force=1`). `available:false` oder leer = CLOSER weiß
+  es nicht und sagt das.
+- **Entscheidungen übernommen:** Kash wird ersetzt (CLOSER beantwortet alle allgemeinen Plattform-
+  fragen; Kash-Wissen kommt über `knowledge`/`learned`), Support-Blase ja, Firmenname nein, Anrede du.
+- **Zusätzlich (7.5):** Offline-Erkennung, Mikrofon verweigert → Hinweis + Textmodus-Angebot, Abbruch
+  mitten im Gespräch wird erkannt, Transkript mit Markennormalisierung, Tastatur/ARIA (Dialog, Live-
+  Regionen, Beschriftungen), Datenschutzhinweis und KI-Hinweis in der gewählten Sprache, RTL-Sprachen.

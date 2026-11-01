@@ -1,11 +1,18 @@
 /**
- * Baut serverseitig den transienten Vapi-Assistenten aus den Einstellungen und
- * der Wissensbasis. Wird von /api/assistant ausgeliefert und vom Browser an
- * vapi.start() übergeben.
+ * Baut serverseitig den transienten Vapi-Assistenten aus den Einstellungen, der
+ * Wissensbasis und der gewählten Sprache. Wird von /api/assistant ausgeliefert
+ * und vom Browser an vapi.start() übergeben. Der Systemtext wird auch vom
+ * Textmodus (/api/chat) genutzt.
  */
 
+import { BRAND, BRAND_PROMPT_RULE, SPOKEN_REPLACEMENTS } from '@/lib/closer/brand';
+import { greetingFor, greetingForMode } from '@/lib/closer/i18n';
+import { addressPromptRule, getAddressMode, hasTvDistinction } from '@/lib/closer/address';
+import { getLanguage, type CloserLanguage } from '@/lib/closer/languages';
 import { buildKnowledgePrompt, getPromptSections } from './knowledge';
-import { getSettings } from './settings';
+import { getSettings, type AllSettings } from './settings';
+import { TOOL_DEFINITIONS } from './tools';
+import { createHmac } from 'node:crypto';
 
 export interface AssistantConfig {
   name: string;
@@ -29,11 +36,35 @@ export interface AssistantConfig {
     style: number;
     useSpeakerBoost: boolean;
     speed: number;
+    chunkPlan?: { enabled: boolean; formatPlan: { enabled: boolean; replacements: unknown[] } };
   };
-  transcriber: { provider: 'deepgram'; model: string; language: 'de' | 'multi' };
+  transcriber: { provider: 'deepgram'; model: string; language: string };
   serverMessages?: string[];
   server?: { url: string; secret?: string; timeoutSeconds?: number };
   metadata?: Record<string, string>;
+}
+
+export interface AssistantContext {
+  conversationId: string;
+  refUsername?: string | null;
+  origin?: string | null;
+  /** Sprachkennung aus lib/closer/languages.ts (z. B. de, tr, zh-CN). */
+  lang?: string | null;
+  /** Kurze Zusammenfassung des bisherigen Verlaufs bei Sprachwechsel. */
+  history?: string | null;
+  /** Textmodus (kein Mikrofon, keine Stimme). */
+  textMode?: boolean;
+}
+
+/**
+ * Signatur je Gespräch für den Webhook. Der Assistent wird im Browser gestartet,
+ * deshalb darf dort kein globales Geheimnis liegen: Statt server.secret wandert
+ * ein Token nur für diese Gesprächs-ID in die Metadaten; der Webhook prüft es.
+ */
+export function conversationToken(conversationId: string): string | null {
+  const secret = process.env.VAPI_WEBHOOK_SECRET;
+  if (!secret) return null;
+  return createHmac('sha256', secret).update(conversationId).digest('hex').slice(0, 32);
 }
 
 /** Öffentliche Basis-URL (für Vapi-Webhooks). */
@@ -44,105 +75,126 @@ export function siteBase(origin?: string | null): string | null {
   return base.replace(/\/$/, '');
 }
 
-export async function buildAssistantConfig(ctx: { conversationId: string; refUsername?: string | null; origin?: string | null }): Promise<AssistantConfig> {
-  const s = await getSettings();
+function languageLine(l: CloserLanguage): string {
+  return `SPRACHE: Antworte ausschließlich auf ${l.nameDe} (Kennung ${l.lang}). Wechselt die Person dauerhaft die Sprache, wechsle mit. Der Name „CLOSER" und „${BRAND.spoken}" bleiben in jeder Sprache gleich.`;
+}
+
+/**
+ * Begrüßung für Sprache und Anrede-Modus (CLOSER_ADDRESS_MODE: ask | sie | du).
+ * Modus du: der im Admin gepflegte deutsche Text bzw. die Du-Übersetzung.
+ * Modus sie/ask: höfliche Begrüßung; bei ask zusätzlich die eine Frage nach der Anrede
+ * (nur in Sprachen mit Höflichkeitsform).
+ */
+export function greetingForLanguage(s: AllSettings, l: CloserLanguage): string {
+  const mode = getAddressMode();
+  if (mode === 'du' && (l.lang === 'de' || l.lang === s.persona.language)) return s.persona.greeting;
+  const g = greetingForMode(l.lang, mode, hasTvDistinction(l.lang)) ?? greetingForMode('en', mode, false);
+  return g ?? greetingFor(l.lang) ?? s.persona.greeting;
+}
+
+/** Vollständiger Systemtext (Persona + Wissen + Regeln) – für Sprach- und Textmodus. */
+export async function buildSystemContent(ctx: AssistantContext, s?: AllSettings): Promise<{ content: string; settings: AllSettings; language: CloserLanguage; toolsAvailable: boolean }> {
+  const settings = s ?? (await getSettings());
+  const language = getLanguage(ctx.lang ?? settings.persona.defaultLanguage);
   const { sections, lastUpdated } = await getPromptSections();
-  const knowledge = buildKnowledgePrompt(sections, lastUpdated, s.persona.name);
+  const knowledge = buildKnowledgePrompt(sections, lastUpdated, settings.persona.name);
   const base = siteBase(ctx.origin);
+  const toolsAvailable = Boolean(base) || Boolean(ctx.textMode);
 
-  const voiceNote =
-    `SPRACHE UND FORMAT: Sprich standardmäßig Deutsch und passe dich der Sprache des Nutzers an. ` +
-    `Anrede: ${s.persona.formOfAddress === 'Sie' ? 'Siezen, höflich und respektvoll' : 'Duzen, locker und direkt'}. ` +
-    'Antworte kurz, natürlich und für Sprachausgabe optimiert: ein bis drei Sätze, keine ' +
-    'Aufzählungen, keine Markdown-Formatierung, keine Emojis, immer nur eine Frage.';
+  const addressRule = addressPromptRule(getAddressMode(), language.lang, language.nameDe);
+  const voiceNote = ctx.textMode
+    ? 'FORMAT: Du antwortest als Text im Chat. Kurz und klar: zwei bis fünf Sätze, einfache Absätze, keine Markdown-Zeichen wie Sternchen oder Rauten, keine Emojis, immer nur eine Rückfrage.'
+    : 'FORMAT: Antworte kurz, natürlich und für Sprachausgabe optimiert: ein bis drei Sätze, keine Aufzählungen, keine Markdown-Formatierung, keine Emojis, immer nur eine Frage.';
 
-  const disclosure = s.privacy.aiDisclosure
-    ? `KI-OFFENLEGUNG: Sag spätestens bei der ersten inhaltlichen Frage einmal kurz: „${s.privacy.aiDisclosure}" Danach nicht wiederholen, außer jemand fragt.`
+  const disclosure = settings.privacy.aiDisclosure
+    ? `KI-OFFENLEGUNG: Sag spätestens bei der ersten inhaltlichen Frage einmal kurz (in der Sprache des Gesprächs): „${settings.privacy.aiDisclosure}" Danach nicht wiederholen, außer jemand fragt.`
     : '';
 
-  const toolsAvailable = Boolean(base);
-  const leadNote = s.features.leadCapture
-    ? `LEAD-ERFASSUNG: Wenn jemand Kontakt wünscht, ein Angebot möchte oder zurückgerufen werden will, frage nach Vorname und E-Mail-Adresse (Nachname und Telefon optional) und lies danach exakt diesen Einwilligungstext vor: „${s.privacy.consentText}" ` +
+  const leadNote = settings.features.leadCapture
+    ? `LEAD-ERFASSUNG: Wenn jemand Kontakt wünscht, ein Angebot möchte oder zurückgerufen werden will, frage nach Vorname und E-Mail-Adresse (Nachname und Telefon optional) und gib danach diesen Einwilligungstext sinngemäß in der Sprache des Gesprächs wieder (auf Deutsch wörtlich): „${settings.privacy.consentText}" ` +
       (toolsAvailable
         ? 'Erst nach einem klaren Ja rufst du die Funktion erfasse_lead mit consent=true auf und bestätigst danach kurz. Ohne Ja speicherst du nichts und sagst das auch.'
         : 'Erst nach einem klaren Ja sagst du: „Danke, ich habe es notiert." Ohne Ja speicherst du nichts und sagst das auch.') +
       ` Du behauptest nie, dass bereits jemand informiert wurde.${ctx.refUsername ? ` Die Person kam über den Empfehler mit dem Benutzernamen ${ctx.refUsername}; erwähne das nur, wenn es passt.` : ''}`
-    : 'LEAD-ERFASSUNG: Du nimmst keine Kontaktdaten auf. Verweise auf die Website, das Webinar oder den persönlichen Empfehler.';
+    : 'LEAD-ERFASSUNG: Du nimmst keine Kontaktdaten auf. Verweise auf die Webseite, das Webinar oder den persönlichen Empfehler.';
 
   const openQuestionNote = toolsAvailable
-    ? 'OFFENE FRAGEN: Wenn dir zu einer Sachfrage über KickstarterCash.club die Information fehlt, sag das ehrlich und rufe einmal die Funktion offene_frage mit der Frage auf, damit das Team sie nachträgt.'
+    ? 'OFFENE FRAGEN: Wenn dir zu einer Sachfrage über Kickstartercash.Club die Information fehlt, sag das ehrlich und rufe einmal die Funktion offene_frage mit der Frage auf (ohne Namen oder Kontaktdaten), damit das Team sie nachträgt.'
     : '';
 
-  const systemContent = [s.persona.systemPrompt.replaceAll('CLOSER', s.persona.name), knowledge, voiceNote, disclosure, leadNote, openQuestionNote]
+  const historyNote = ctx.history?.trim()
+    ? `BISHERIGER VERLAUF (die Person hat gerade die Sprache gewechselt; knüpfe daran an, ohne alles zu wiederholen): ${ctx.history.trim().slice(0, 2500)}`
+    : '';
+
+  const content = [
+    settings.persona.systemPrompt.replaceAll('CLOSER', settings.persona.name),
+    knowledge,
+    languageLine(language),
+    BRAND_PROMPT_RULE,
+    addressRule,
+    voiceNote,
+    disclosure,
+    leadNote,
+    openQuestionNote,
+    historyNote,
+  ]
     .filter(Boolean)
     .join('\n\n');
+  return { content, settings, language, toolsAvailable };
+}
+
+function toolList(settings: AllSettings): unknown[] {
+  const tools: unknown[] = [
+    { type: 'function', async: false, function: TOOL_DEFINITIONS.offene_frage, messages: [{ type: 'request-start', content: 'Ich notiere das für das Team.' }] },
+  ];
+  if (settings.features.leadCapture) {
+    tools.push({ type: 'function', async: false, function: TOOL_DEFINITIONS.erfasse_lead, messages: [{ type: 'request-start', content: 'Einen Moment, ich speichere das.' }] });
+  }
+  return tools;
+}
+
+export async function buildAssistantConfig(ctx: AssistantContext): Promise<AssistantConfig> {
+  const { content, settings: s, language } = await buildSystemContent({ ...ctx, textMode: false });
+  const base = siteBase(ctx.origin);
+  if (!language.voice) {
+    throw new Error(`Sprache ${language.lang} hat keinen Sprachmodus; bitte den Textmodus nutzen.`);
+  }
 
   const cfg: AssistantConfig = {
     name: s.persona.name,
-    firstMessage: s.persona.greeting,
+    firstMessage: greetingForLanguage(s, language),
     firstMessageMode: 'assistant-speaks-first',
     maxDurationSeconds: 1800,
-    model: { provider: 'openai', model: s.model.model, temperature: s.model.temperature, messages: [{ role: 'system', content: systemContent }] },
+    model: { provider: 'openai', model: s.model.model, temperature: s.model.temperature, messages: [{ role: 'system', content }] },
     voice: {
       provider: '11labs',
       voiceId: s.voice.voiceId,
+      // Mehrsprachige Modelle: turbo_v2_5 / flash_v2_5 können alle Sprachmodus-Sprachen.
       model: s.voice.model,
-      language: s.persona.language || 'de',
+      language: language.eleven ?? 'de',
       stability: s.voice.stability,
       similarityBoost: s.voice.similarityBoost,
       style: s.voice.style,
       useSpeakerBoost: s.voice.useSpeakerBoost,
       speed: s.voice.speed,
+      // Aussprache des Markennamens: „Kickstartercash.Club" → „Kickstartercash Club".
+      chunkPlan: { enabled: true, formatPlan: { enabled: true, replacements: SPOKEN_REPLACEMENTS } },
     },
-    transcriber: { provider: 'deepgram', model: s.model.transcriberModel, language: s.model.transcriberLanguage },
-    metadata: { conversationId: ctx.conversationId, ...(ctx.refUsername ? { refUsername: ctx.refUsername } : {}) },
+    transcriber: { provider: 'deepgram', model: s.model.transcriberModel, language: language.deepgram ?? 'de' },
+    metadata: {
+      conversationId: ctx.conversationId,
+      language: language.lang,
+      ...(ctx.refUsername ? { refUsername: ctx.refUsername } : {}),
+      ...(conversationToken(ctx.conversationId) ? { token: conversationToken(ctx.conversationId) as string } : {}),
+    },
   };
 
   // Webhook (Gesprächsende-Bericht) und Funktionen (Lead, offene Frage).
+  // Kein server.secret: die Konfiguration geht an den Browser. Der Webhook prüft das Token in den Metadaten.
   if (base) {
-    const secret = process.env.VAPI_WEBHOOK_SECRET;
     cfg.serverMessages = ['end-of-call-report', 'tool-calls'];
-    cfg.server = { url: `${base}/api/vapi/webhook`, timeoutSeconds: 20, ...(secret ? { secret } : {}) };
-    const tools: unknown[] = [
-      {
-        type: 'function',
-        async: false,
-        function: {
-          name: 'offene_frage',
-          description: 'Meldet eine Sachfrage, die mit der Wissensbasis nicht beantwortet werden konnte, an das Team.',
-          parameters: {
-            type: 'object',
-            properties: { frage: { type: 'string', description: 'Die Frage des Nutzers in einem Satz.' } },
-            required: ['frage'],
-          },
-        },
-        messages: [{ type: 'request-start', content: 'Ich notiere das für das Team.' }],
-      },
-    ];
-    if (s.features.leadCapture) {
-      tools.push({
-        type: 'function',
-        async: false,
-        function: {
-          name: 'erfasse_lead',
-          description: 'Speichert die Kontaktdaten eines Interessenten, nachdem er dem Einwilligungstext ausdrücklich zugestimmt hat.',
-          parameters: {
-            type: 'object',
-            properties: {
-              vorname: { type: 'string' },
-              nachname: { type: 'string' },
-              email: { type: 'string', description: 'E-Mail-Adresse, buchstabiert bestätigen.' },
-              telefon: { type: 'string' },
-              anliegen: { type: 'string', description: 'Worum es geht, in einem Satz.' },
-              consent: { type: 'boolean', description: 'true nur nach klarem Ja zum Einwilligungstext.' },
-            },
-            required: ['vorname', 'email', 'consent'],
-          },
-        },
-        messages: [{ type: 'request-start', content: 'Einen Moment, ich speichere das.' }],
-      });
-    }
-    cfg.model.tools = tools;
+    cfg.server = { url: `${base}/api/vapi/webhook`, timeoutSeconds: 20 };
+    cfg.model.tools = toolList(s);
   }
   return cfg;
 }

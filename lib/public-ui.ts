@@ -25,13 +25,17 @@ export interface PublicUi {
   showTranscript: boolean;
   /** true, wenn Besucher ohne Login nicht sprechen dürfen. */
   loginRequired: boolean;
+  /** Voreingestellte Sprache (Kennung aus lib/closer/languages.ts). */
+  defaultLanguage: string;
+  /** Oberflächentexte der gewählten Sprache anpassen (sonst Deutsch). */
+  uiTranslations: boolean;
   design: { accent: string; accentLight: string; accentDark: string; background: string };
 }
 
 export const DEFAULT_PUBLIC_UI: PublicUi = {
   name: uiText.agentName,
   tagline: uiText.agentTagline,
-  imageUrl: '/johann-orb.png',
+  imageUrl: '/closer-orb.png',
   eyebrow: uiText.eyebrow,
   heroTitleLine1: uiText.heroTitleLine1,
   heroTitleLine2: uiText.heroTitleLine2,
@@ -45,15 +49,23 @@ export const DEFAULT_PUBLIC_UI: PublicUi = {
   supportsChatInput: true,
   showTranscript: true,
   loginRequired: false,
+  defaultLanguage: 'de',
+  uiTranslations: false,
   design: { accent: '#d4a63a', accentLight: '#f3d58a', accentDark: '#8a6420', background: '#0a0a0b' },
 };
+
+/** Altes Standardbild auf den neuen Dateinamen umlenken. */
+function legacyImage(url: string): string {
+  if (!url || url === '/johann-orb.png') return '/closer-orb.png';
+  return url;
+}
 
 export function publicUiFromSettings(s: AllSettings, loggedIn: boolean): PublicUi {
   const n = s.persona.name;
   return {
     name: n,
     tagline: s.persona.tagline,
-    imageUrl: s.persona.imageUrl || '/johann-orb.png',
+    imageUrl: legacyImage(s.persona.imageUrl),
     eyebrow: s.texts.eyebrow,
     heroTitleLine1: s.texts.heroTitleLine1,
     heroTitleLine2: s.texts.heroTitleLine2,
@@ -73,6 +85,8 @@ export function publicUiFromSettings(s: AllSettings, loggedIn: boolean): PublicU
     supportsChatInput: s.design.supportsChatInput,
     showTranscript: s.design.showTranscript,
     loginRequired: !s.features.publicAccess && !loggedIn,
+    defaultLanguage: s.persona.defaultLanguage || 'de',
+    uiTranslations: s.features.uiTranslations,
     design: { accent: s.design.accent, accentLight: s.design.accentLight, accentDark: s.design.accentDark, background: s.design.background },
   };
 }

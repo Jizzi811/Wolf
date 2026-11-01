@@ -18,7 +18,7 @@ import { CLOSER_SYSTEM_PROMPT } from './system-prompt';
 
 /** Standardbegrüßung – wird von Vapi als `firstMessage` automatisch gesprochen. */
 export const CLOSER_GREETING =
-  'Da bist du ja. Ich bin CLOSER, Johanns digitaler Gesprächspartner. ' +
+  'Da bist du ja. Ich bin CLOSER, der digitale Assistent von Kickstartercash Club. ' +
   'Was wollen wir heute klären, verbessern oder endlich in Bewegung bringen?';
 
 /** Standardsprache. Der Agent passt sich der Sprache des Nutzers an. */

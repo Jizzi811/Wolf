@@ -30,10 +30,10 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG: AppConfig = {
-  companyName: 'KickstarterCash.club',
+  companyName: 'Kickstartercash.Club',
   productName: 'CLOSER',
 
-  pageTitle: 'CLOSER – Der Voice Agent von KickstarterCash.club',
+  pageTitle: 'CLOSER – Der digitale Assistent von Kickstartercash.Club',
   pageDescription:
     'Ein charismatischer KI-Gesprächspartner für Business, Motivation und Klartext.',
 
@@ -44,6 +44,6 @@ export const APP_CONFIG: AppConfig = {
 
   supportsChatInput: true,
 
-  orbImageSrc: '/johann-orb.png',
+  orbImageSrc: '/closer-orb.png',
   orbAltText: 'Goldener Orb mit Sonnenbrille, Hut und Anzug – die Figur von CLOSER.',
 };

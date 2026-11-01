@@ -1,5 +1,6 @@
 import { resetSettingsFormAction, saveSettingsAction } from '@/lib/admin/actions';
 import { getSettings } from '@/lib/admin/settings';
+import { LANGUAGES } from '@/lib/closer/languages';
 import { ActionForm, ConfirmButton } from '../action-form';
 import { ImageUpload } from '../upload';
 import { Card, Field, Input, PageHeader, Select, Textarea } from '../ui';
@@ -21,7 +22,14 @@ export async function PersonaModule({ isAdmin }: { isAdmin: boolean }) {
                 <option value="Sie">Sie</option>
               </Select>
             </Field>
-            <Field label="Sprache (Code)" hint="de, en, tr …"><Input name="language" defaultValue={s.persona.language} maxLength={10} /></Field>
+            <Field label="Sprache des Prompts (Code)" hint="Sprache, in der Begrüßung und Prompt hier geschrieben sind (meist de)."><Input name="language" defaultValue={s.persona.language} maxLength={10} /></Field>
+            <Field label="Voreingestellte Sprache der Seite" hint="Gilt, wenn Link (?lang=) und Browser nichts vorgeben. Grün = Sprachmodus, sonst Textmodus.">
+              <Select name="defaultLanguage" defaultValue={s.persona.defaultLanguage}>
+                {LANGUAGES.map((l) => (
+                  <option key={l.lang} value={l.lang}>{l.nameDe} ({l.lang}){l.voice ? '' : ' – nur Text'}</option>
+                ))}
+              </Select>
+            </Field>
           </div>
           <Field label="Bild (Orb)"><ImageUpload name="imageUrl" defaultValue={s.persona.imageUrl} blobReady={blobReady} /></Field>
           <Field label="Begrüßung (erster gesprochener Satz)"><Textarea name="greeting" defaultValue={s.persona.greeting} maxLength={1000} /></Field>
