@@ -1,13 +1,34 @@
 /**
  * Funktionen, die der Agent im Gespräch aufrufen kann (Sprach- und Textmodus):
- * erfasse_lead (nur nach Einwilligung) und offene_frage (Lücke melden).
+ * erfasse_lead (nur nach Einwilligung), offene_frage (Lücke melden) und
+ * kcc_nachschlagen (live in der Plattform nachsehen, Übergabe v6).
  */
 
 import { getSettings } from './settings';
 import { createLead, recordOpenQuestion } from './tracking';
 import { pushFeedbackToPlatform, pushLeadToPlatform } from '@/lib/bridge/outbound';
+import { bridgeConfigured } from '@/lib/bridge/client';
+import { LOOKUP_AREAS, isLookupArea, lookupLive, lookupResultText } from '@/lib/bridge/lookup';
 
 export const TOOL_DEFINITIONS = {
+  kcc_nachschlagen: {
+    name: 'kcc_nachschlagen',
+    description:
+      'Schlägt live in der Plattform Kickstartercash.Club nach und liefert aktuelle Daten eines Bereichs. Immer nutzen bei Webinar-Terminen, Preisen, Paketen, Karten, Bankkonten, Auswandern, Health Box, Shop, Mitteilungen/News, Team, Services, Partnern, Charity, Rechtlichem sowie bei Fragen nach Menüpunkten oder Links. Vorher kurz ankündigen („Einen Moment, ich schaue kurz nach.").',
+    parameters: {
+      type: 'object',
+      properties: {
+        bereich: {
+          type: 'string',
+          enum: [...LOOKUP_AREAS],
+          description:
+            'catalog = Pakete, Karten, Bankkonten, Health Box, Shop, Fanshop, Ränge, Provisionen; webinars = Termine; overview = Menü und Links der Webseite und des Mitgliederbereichs; relocation = Auswandern; guides = Handbuch; realestate = Immobilien; directory = Rechtstexte, Team, Services, Partner, News, Charity; social = Social-Kanäle; promo = Werbemittel; tour = System-Tour; content = Texte und Neuigkeiten; learned = freigegebene Antworten.',
+        },
+        stichwort: { type: 'string', description: 'Optional: Suchwort, um nur passende Einträge zu bekommen (z. B. „Charity", „Black Card", „Impressum").' },
+      },
+      required: ['bereich'],
+    },
+  },
   offene_frage: {
     name: 'offene_frage',
     description: 'Meldet eine Sachfrage, die mit der Wissensbasis nicht sicher beantwortet werden konnte, an das Team (ohne Namen oder persönliche Daten).',
@@ -45,6 +66,13 @@ export interface ToolContext {
 export async function runTool(name: string, args: Record<string, unknown>, ctx: ToolContext): Promise<string> {
   const settings = await getSettings();
   try {
+    if (name === 'kcc_nachschlagen') {
+      const area = String(args.bereich ?? '').trim().toLowerCase();
+      if (!isLookupArea(area)) return `Unbekannter Bereich. Erlaubt sind: ${LOOKUP_AREAS.join(', ')}.`;
+      if (!bridgeConfigured()) return 'Die Plattform-Anbindung ist nicht eingerichtet. Antworte aus der Wissensbasis, erfinde nichts und verweise auf die Webseite.';
+      const r = await lookupLive(area);
+      return lookupResultText(r, typeof args.stichwort === 'string' ? args.stichwort : null);
+    }
     if (name === 'erfasse_lead') {
       if (!settings.features.leadCapture) return 'Lead-Erfassung ist deaktiviert. Bitte auf die Webseite und das Team verweisen.';
       const consent = args.consent === true || args.consent === 'true';
@@ -78,6 +106,8 @@ export async function runTool(name: string, args: Record<string, unknown>, ctx: 
     return 'Unbekannte Funktion.';
   } catch (e) {
     console.error('tool', name, e);
-    return 'Technischer Fehler beim Speichern. Bitte auf die Webseite verweisen.';
+    return name === 'kcc_nachschlagen'
+      ? 'Die Plattform hat gerade nicht geantwortet. Zeig keine Fehlermeldung, erfinde nichts; sag, dass du gleich noch einmal nachschaust, oder verweise auf Termin und Support.'
+      : 'Technischer Fehler beim Speichern. Bitte auf die Webseite verweisen.';
   }
 }

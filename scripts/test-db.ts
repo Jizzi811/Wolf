@@ -4,6 +4,7 @@
  * Aufruf: pnpm test:db
  */
 import { PGlite } from '@electric-sql/pglite';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { setDbForTests, db, schema, type Db } from '@/lib/db';
 import { createUser, findUserByEmail, countUsers } from '@/lib/admin/users';
@@ -20,6 +21,10 @@ import { normalizeBrand, BRAND } from '@/lib/closer/brand';
 import { GREETINGS, UI, greetingForMode, GREETINGS_POLITE, ADDRESS_QUESTIONS } from '@/lib/closer/i18n';
 import { hasTvDistinction, addressPromptRule, getAddressMode } from '@/lib/closer/address';
 import { buildSystemContent } from '@/lib/admin/assistant';
+import { runTool, TOOL_DEFINITIONS } from '@/lib/admin/tools';
+import { compactForModel, lookupLive, tidy } from '@/lib/bridge/lookup';
+import { READ_AREAS, countEntries } from '@/lib/bridge/sync';
+import { lookupPhraseFor } from '@/lib/closer/i18n';
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(`FEHLER: ${msg}`);
@@ -102,6 +107,8 @@ async function main() {
   const cid = 'clsr-20261018-aaaaaaaaaaaa';
   await startConversation({ conversationId: cid, visitorId: 'v1', refUsername: 'nadja', userId: admin.id });
   await startConversation({ conversationId: cid, vapiCallId: 'call-1' });
+  // Zweiter Start ohne neue Werte (z. B. Track-Start nach /api/assistant) darf nicht werfen.
+  await startConversation({ conversationId: cid });
   await recordEvent({ type: 'page_view', visitorId: 'v1', path: '/' });
   const transcript = [
     { role: 'assistant' as const, text: 'Hallo', at: 0 },
@@ -110,7 +117,7 @@ async function main() {
   ];
   await endConversation({ conversationId: cid, durationS: 95, transcript, endedReason: 'nutzer-beendet', storeTranscript: true });
   let conv = await d.query.conversations.findFirst({ where: (c, { eq }) => eq(c.conversationId, cid) });
-  assert(conv?.durationS === 95 && conv.messagesCount === 3 && conv.vapiCallId === 'call-1', 'Gespräch beendet und gezählt');
+  assert(conv?.durationS === 95 && conv.messagesCount === 3 && conv.vapiCallId === 'call-1' && conv.refUsername === 'nadja' && conv.userId === admin.id, 'Gespräch beendet und gezählt');
   assert(conv!.topics.includes('Black Card') && conv!.topics.includes('Vergütungsplan'), `Themen erkannt: ${conv!.topics.join(', ')}`);
   await applyEndOfCallReport({ conversationId: cid, vapiCallId: 'call-1', durationS: 97, summary: 'Preisfrage.', transcript, endedReason: 'customer-ended-call', costUsd: 0.0421, storeTranscript: true });
   conv = await d.query.conversations.findFirst({ where: (c, { eq }) => eq(c.conversationId, cid) });
@@ -199,6 +206,91 @@ async function main() {
   const sieCfg = await buildAssistantConfig({ conversationId: 'clsr-20261101-abcdefabcdef', lang: 'fr', origin: 'https://x' });
   assert(sieCfg.firstMessage === GREETINGS_POLITE.fr && sieCfg.model.messages[0].content.includes('ANREDE: Sieze'), 'CLOSER_ADDRESS_MODE=sie: höflich ohne Frage (Französisch)');
   delete process.env.CLOSER_ADDRESS_MODE;
+
+  // ---------- Übergabe v6: die ganze Webseite ----------
+  assert(READ_AREAS.includes('directory'), 'Bereich directory wird mit geladen');
+  const future = new Date(Date.now() + 86400000).toISOString();
+  const past = new Date(Date.now() - 86400000).toISOString();
+  await d.insert(schema.bridgeCache).values([
+    {
+      area: 'directory', status: 'ok', fetchedAt: new Date(), hash: 'd1',
+      data: {
+        available: true,
+        legal: [{ title: 'Impressum', url: 'https://portal.kickstartercash.club/impressum.php', text: 'Lang …' }, { title: 'Datenschutz', url: 'https://portal.kickstartercash.club/datenschutz.php' }],
+        team: [{ name: 'Max Muster', role: 'Support', languages: ['de', 'en'], phone: '+49 123', email: 'max@example.com' }],
+        services: [], partners: [], print_partners: [],
+        news: [{ title: 'Supportpause', text: 'Support bis 02.11. pausiert', from: past, until: future }, { title: 'Alt', text: 'vorbei', from: past, until: past }],
+        charity: [{ name: 'Hilfswerk A', summary: 'Hilft.', website: 'https://a.example' }],
+      },
+    },
+  ]);
+  await d.update(schema.bridgeCache).set({
+    data: {
+      available: true, site_url: 'https://portal.kickstartercash.club/', login_url: 'https://portal.kickstartercash.club/login.php',
+      scopes: [
+        { scope: 'public', name: 'Webseite', categories: [{ category: 'Welcome', items: [{ title: 'Startseite', url: 'https://portal.kickstartercash.club/' }] }, { category: 'Hilfe & Handbuch', items: [{ title: 'Handbuch', url: 'https://portal.kickstartercash.club/public-handbook.php' }] }] },
+        { scope: 'user', name: 'Mitglieder', categories: [{ category: 'Wallet', items: [{ title: 'Guthaben', url: 'https://portal.kickstartercash.club/user/wallet.php', login_required: true }] }] },
+      ],
+    },
+  }).where(eq(schema.bridgeCache.area, 'overview'));
+  const bs3 = await bridgeSections();
+  const dir = bs3.sections.find((x) => x.slug === 'bridge-directory');
+  assert(dir && dir.content.includes('Impressum') && dir.content.includes('Max Muster') && dir.content.includes('Supportpause') && !dir.content.includes('Alt:') && !dir.content.includes('+49') && !dir.content.includes('max@example.com'), 'Verzeichnis: Rechtstexte, Team ohne Kontaktdaten, nur laufende News');
+  assert(dir!.content.includes('Charity (1 Organisationen)') && !dir!.content.includes('Services ('), 'Verzeichnis: Charity gezählt, leere Services nicht erwähnt');
+  const ov = bs3.sections.find((x) => x.slug === 'bridge-overview')!;
+  assert(ov.content.includes('Öffentliche Webseite, 2 Hauptkategorien') && ov.content.includes('[https://portal.kickstartercash.club/public-handbook.php]') && ov.content.includes('Mitgliederbereich (nur nach der Anmeldung), 1 Hauptkategorien'), 'Menü: Hauptkategorien gezählt, Links aus den Daten, Mitgliederbereich markiert');
+  await saveSetting('persona', { systemPrompt: 'Alt: Du kennst die vier Mitgliedschafts-Pakete.' }, admin.id);
+  assert(!(await getSettings()).persona.systemPrompt.includes('vier Mitgliedschafts-Pakete'), 'alter Prompt mit fester Paket-Anzahl wird ersetzt');
+  // Katalog: weitere Gruppen (Angebote v2)
+  await d.update(schema.bridgeCache).set({
+    data: {
+      packages: [{ name: 'Private Premium', price: { EUR: 385 }, visibility: { public: true } }],
+      banking_accounts: [{ name: 'Konto Basic', price: { EUR: 0 }, monthly_fee: { EUR: 9 }, active: true }, { name: 'Versteckt', price: { EUR: 1 }, active: false }],
+      healthbox_packages: [{ name: 'Health Box S', price_eur: 49, summary: 'Monatlich.' }],
+    },
+  }).where(eq(schema.bridgeCache.area, 'catalog'));
+  const bs4 = await bridgeSections();
+  assert(bs4.sections.some((x) => x.slug === 'bridge-banking' && x.content.includes('Konto Basic') && !x.content.includes('Versteckt')), 'Katalog: Bankkonten nur aktive');
+  assert(bs4.sections.some((x) => x.slug === 'bridge-healthbox' && x.content.includes('49 Euro')), 'Katalog: Health Box');
+  // Werkzeug kcc_nachschlagen
+  assert(TOOL_DEFINITIONS.kcc_nachschlagen.parameters.properties.bereich.enum.includes('directory'), 'Werkzeug kennt Bereich directory');
+  assert(lookupPhraseFor('de') === 'Einen Moment, ich schaue kurz nach.' && lookupPhraseFor('zh-TW') === lookupPhraseFor('zh') && lookupPhraseFor('xx') === lookupPhraseFor('en'), 'Ansage je Sprache');
+  const noBridge = await runTool('kcc_nachschlagen', { bereich: 'webinars' }, { conversationId: null, refUsername: null, language: 'de' });
+  assert(noBridge.includes('nicht eingerichtet'), 'ohne Brücke: ehrliche Rückmeldung an das Modell');
+  process.env.KCC_BRIDGE_URL = 'https://platform.test/api/closer/index.php';
+  process.env.KCC_BRIDGE_SECRET = 'geheim';
+  const v6cfg = await buildAssistantConfig({ conversationId: 'clsr-20261101-abcdefabcdef', lang: 'tr', origin: 'https://x' });
+  const v6tools = v6cfg.model.tools as { function: { name: string }; messages?: { type: string; content: string }[] }[];
+  assert(v6tools[0].function.name === 'kcc_nachschlagen' && v6tools[0].messages?.[0].content === lookupPhraseFor('tr'), 'Sprachmodus: Werkzeug mit Ansage in Kundensprache (Türkisch)');
+  assert(v6cfg.model.messages[0].content.includes('LIVE-NACHSCHLAGEN') && v6cfg.model.messages[0].content.includes('nach der Anmeldung') && v6cfg.model.messages[0].content.includes('Admin- und Team-Seiten gibt es für dich nicht'), 'Prompt: Live-Regeln, Mitglieder-Links, keine Admin-Seiten');
+  const realFetch = globalThis.fetch;
+  // a) Plattform antwortet live
+  globalThis.fetch = (async (url: unknown) => {
+    const u = String(url);
+    if (u.includes('route=webinars')) return new Response(JSON.stringify({ ok: true, hash: 'w9', data: { available: true, timezone: 'Europe/Berlin', items: [{ title: 'Info-Webinar', weekday: 2, time_local: '19:00' }] } }), { status: 200 });
+    if (u.includes('route=promo')) return new Response(JSON.stringify({ ok: false, code: 'DISABLED' }), { status: 403 });
+    throw new Error('timeout');
+  }) as typeof fetch;
+  const live = await runTool('kcc_nachschlagen', { bereich: 'webinars' }, { conversationId: null, refUsername: null, language: 'de' });
+  assert(live.includes('Stand jetzt') && live.includes('Info-Webinar') && live.includes('Zeitzone'), 'Live-Nachschlagen: frische Daten mit Zeitzonen-Hinweis');
+  assert((await getBridgeCache()).webinars?.hash === 'w9', 'Live-Ergebnis landet im Zwischenspeicher');
+  const off = await runTool('kcc_nachschlagen', { bereich: 'promo' }, { conversationId: null, refUsername: null, language: 'de' });
+  assert(off.includes('nicht freigegeben'), 'abgeschalteter Bereich: nichts behaupten');
+  // b) Plattform weg: Zwischenspeicher
+  const stale = await runTool('kcc_nachschlagen', { bereich: 'directory', stichwort: 'Impressum' }, { conversationId: null, refUsername: null, language: 'de' });
+  assert(stale.includes('Zwischenspeicher') && stale.includes('Impressum') && !stale.includes('Datenschutz') && !stale.includes('+49'), 'Plattform nicht erreichbar: letzter Stand, Stichwort-Filter, keine Kontaktdaten');
+  const none = await lookupLive('tour');
+  assert(none.source === 'none', 'kein Speicher, keine Plattform: source none');
+  assert((await runTool('kcc_nachschlagen', { bereich: 'tour' }, { conversationId: null, refUsername: null, language: 'de' })).includes('keine Fehlermeldung'), 'nichts da: keine Fehlermeldung an die Person');
+  assert((await runTool('kcc_nachschlagen', { bereich: 'admin' }, { conversationId: null, refUsername: null, language: 'de' })).includes('Unbekannter Bereich'), 'Admin ist kein Bereich');
+  globalThis.fetch = realFetch;
+  delete process.env.KCC_BRIDGE_URL;
+  delete process.env.KCC_BRIDGE_SECRET;
+  const big = compactForModel({ items: Array.from({ length: 500 }, (_, i) => ({ title: `Eintrag ${i}`, text: 'x'.repeat(2000) })) });
+  assert(big.length <= 14000, `Daten für das Modell gekürzt (${big.length} Zeichen)`);
+  const tidied = tidy('directory', { news: [{ title: 'n', from: past, until: past }], team: [{ name: 'A', phone: '1' }] }) as { news: unknown[]; team: Record<string, unknown>[] };
+  assert(tidied.news.length === 0 && tidied.team[0].phone === undefined, 'Bereinigung: abgelaufene News raus, Telefon raus');
+  assert(countEntries({ available: false }).available === false, 'available:false zählt als nicht verfügbar');
 
   console.log('\nAlle Tests bestanden.');
   await client.close();

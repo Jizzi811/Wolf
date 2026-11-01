@@ -1,6 +1,6 @@
 import { syncBridgeAction } from '@/lib/admin/actions';
 import { bridgeConfigured } from '@/lib/bridge/client';
-import { getBridgeCache, READ_AREAS } from '@/lib/bridge/sync';
+import { countEntries, getBridgeCache, READ_AREAS } from '@/lib/bridge/sync';
 import { ConfirmButton } from '../action-form';
 import { Badge, Card, Notice, PageHeader, Table, Td, fmtDate } from '../ui';
 
@@ -19,6 +19,7 @@ const AREA_LABEL: Record<string, string> = {
   social: 'Social-Kanäle',
   tour: 'System-Tour (Folien)',
   learned: 'Gelernte Antworten (Vorrang)',
+  directory: 'Verzeichnis (Rechtstexte, Team, Services, Partner, News, Charity)',
 };
 
 export async function AnbindungModule() {
@@ -30,7 +31,7 @@ export async function AnbindungModule() {
     <>
       <PageHeader
         title="Plattform-Anbindung"
-        description="Signierte Brücke zu portal.kickstartercash.club (P18 + P18c, Version 1.1.0). Daraus liest der Agent Preise, Pakete, Karten, Webinare, Kanäle, Texte, Handbuch, Auswandern, Immobilien, Werbemittel und die von Nadja freigegebenen Antworten automatisch; Leads und offene Fragen gehen zurück zur Plattform. Vorrang: Gelernte Antworten vor Live-Bereichen vor Wissens-Datei vor Startwissen."
+        description="Signierte Brücke zu portal.kickstartercash.club (P18, P18c, P18e). Daraus kennt der Agent die ganze Webseite: Menü und Links (öffentlich und Mitgliederbereich), Preise, Pakete, Karten, Bankkonten, Webinare, Handbuch, Auswandern, Immobilien, Werbemittel, Rechtstexte, Team, Services, Partner, Mitteilungen, Charity und die von Nadja freigegebenen Antworten. Was sich ändert (Termine, Preise, News …), schlägt er im Gespräch live nach („Einen Moment, ich schaue kurz nach“). Leads und offene Fragen gehen zurück zur Plattform. Vorrang: Gelernte Antworten vor Live-Bereichen vor Wissens-Datei vor Startwissen."
         actions={configured ? <><ConfirmButton action={syncBridgeAction} label="Jetzt abgleichen" hidden={{ force: false }} /><ConfirmButton action={syncBridgeAction} label="Alles neu laden" variant="primary" hidden={{ force: true }} /></> : undefined}
       />
       {!configured ? (
@@ -51,16 +52,18 @@ export async function AnbindungModule() {
             {healthData?.version ? <><dt className="text-muted">Version</dt><dd>{healthData.version}</dd></> : null}
             {healthData?.knowledge_updated_at ? <><dt className="text-muted">Wissen zuletzt</dt><dd>{healthData.knowledge_updated_at}</dd></> : null}
           </dl>
-          <p className="mt-4 text-xs text-muted">Automatischer Abgleich: täglich per Vercel-Cron und zusätzlich bei Gesprächsstart, wenn der letzte Abgleich älter als eine Stunde ist.</p>
+          <p className="mt-4 text-xs text-muted">Aktuell halten: bei jedem neuen Gespräch und in langen Gesprächen alle 5 Minuten fragt der Agent die Plattform nach Änderungen und lädt nur geänderte Bereiche nach. Zusätzlich täglich um 3 Uhr alles neu. Preise, Termine und Mitteilungen liest er im Gespräch ohnehin live.</p>
         </Card>
         <Card title="Bereiche" className="lg:col-span-2">
-          <Table head={['Bereich', 'Status', 'Stand', 'Hash / Fehler']}>
+          <Table head={['Bereich', 'Status', 'Einträge', 'Stand', 'Hash / Fehler']}>
             {READ_AREAS.map((a) => {
               const r = cache[a];
+              const c = r?.status === 'ok' ? countEntries(r.data) : null;
               return (
                 <tr key={a}>
                   <Td>{AREA_LABEL[a] ?? a}</Td>
                   <Td><Badge tone={r?.status === 'ok' ? 'green' : r?.status === 'fehler' ? 'red' : 'neutral'}>{r?.status ?? 'leer'}</Badge></Td>
+                  <Td>{c ? (c.available ? c.count : 'aus') : '–'}</Td>
                   <Td>{r?.fetchedAt ? fmtDate(r.fetchedAt) : '–'}</Td>
                   <Td className="font-mono text-xs text-muted">{r?.error ?? (r?.hash ? r.hash.slice(0, 16) + '…' : '–')}</Td>
                 </tr>

@@ -50,7 +50,14 @@ export async function startConversation(c: {
     })
     .onConflictDoUpdate({
       target: schema.conversations.conversationId,
-      set: { vapiCallId: c.vapiCallId ?? undefined, userId: c.userId ?? undefined, refUsername: c.refUsername ?? undefined },
+      // Nur bekannte Werte nachtragen. Drizzle wirft „No values to set“, wenn
+      // alle Felder undefined sind – deshalb immer mindestens ein Feld setzen.
+      set: {
+        language: c.language ?? sql`${schema.conversations.language}`,
+        ...(c.vapiCallId ? { vapiCallId: c.vapiCallId } : {}),
+        ...(c.userId != null ? { userId: c.userId } : {}),
+        ...(c.refUsername ? { refUsername: c.refUsername } : {}),
+      },
     });
 }
 

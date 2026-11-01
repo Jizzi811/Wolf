@@ -5,7 +5,7 @@ import { getSettings } from '@/lib/admin/settings';
 import { recordEvent, startConversation } from '@/lib/admin/tracking';
 import { getCurrentUser } from '@/lib/auth/session';
 import { bridgeConfigured, newConversationId } from '@/lib/bridge/client';
-import { getBridgeCache, syncBridge } from '@/lib/bridge/sync';
+import { syncBridgeIfStale } from '@/lib/bridge/sync';
 import { getLanguage } from '@/lib/closer/languages';
 import { hasDatabase } from '@/lib/db';
 
@@ -57,13 +57,10 @@ async function handle(req: Request, input: z.infer<typeof Body>) {
       try {
         await startConversation({ conversationId, visitorId, userId, refUsername, userAgent: req.headers.get('user-agent'), language: language.lang, channel: 'web' });
         await recordEvent({ type: 'conversation_start', conversationId, visitorId, userId, path: '/', meta: { lang: language.lang, mode: 'voice' } });
-        // Brücke bei Bedarf im Hintergrund auffrischen (max. einmal pro Stunde).
+        // Speicher aktuell halten (Übergabe v6): bei jedem neuen Gespräch Änderungsabgleich
+        // (changes?since=…), höchstens alle 60 Sekunden; nur geänderte Bereiche werden neu geladen.
         const settings = await getSettings();
-        if (settings.features.bridgeAutoSync && bridgeConfigured()) {
-          const cache = await getBridgeCache();
-          const last = cache.health?.fetchedAt?.getTime() ?? 0;
-          if (Date.now() - last > 60 * 60 * 1000) await syncBridge();
-        }
+        if (settings.features.bridgeAutoSync && bridgeConfigured()) await syncBridgeIfStale(60 * 1000);
       } catch (e) {
         console.error('assistant/after', e);
       }

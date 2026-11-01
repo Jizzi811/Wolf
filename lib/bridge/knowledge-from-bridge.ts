@@ -125,25 +125,60 @@ export async function bridgeSections(): Promise<{ sections: PromptSection[]; fet
     }
   }
 
+  // Angebote v2 / v6: weitere Gruppen des Katalogs (nur was aktiv und sichtbar ist; keine festen Anzahlen).
+  if (catalog) {
+    const active = (x: Record<string, unknown>) => x.active !== false && (x.visibility as Record<string, boolean> | undefined)?.public !== false && x.visible !== false;
+    const priceOf = (x: Record<string, unknown>) => eur((x.price ?? x.price_eur ?? x.price_normal) as Money);
+    const memberOf = (x: Record<string, unknown>) => eur((x.member_price ?? x.price_member ?? x.price_member_eur) as Money);
+    const line = (x: Record<string, unknown>) => {
+      const parts = [str(x.name ?? x.title)];
+      const p = priceOf(x);
+      const m = memberOf(x);
+      if (p) parts.push(p);
+      if (m) parts.push(`für Mitglieder ${m}`);
+      const monthly = eur(x.monthly_fee as Money);
+      if (monthly) parts.push(`monatlich ${monthly}`);
+      const promo = x.promo as Record<string, unknown> | undefined;
+      const promoPrice = eur((promo?.active ? promo.price : x.promo_price ?? x.promo_price_eur) as Money);
+      if (promoPrice) parts.push(`Aktionspreis ${promoPrice}${str(x.promo_until) ? ` bis ${str(x.promo_until)}` : ''}`);
+      const sum = stripHtml(str(x.summary ?? x.description)).slice(0, 160);
+      return parts.filter(Boolean).join(', ') + (sum ? ` – ${sum}` : '') + '.';
+    };
+    const groups: { key: string; slug: string; title: string; intro: string; outro: string }[] = [
+      { key: 'banking_accounts', slug: 'bridge-banking', title: 'Bankkonten (live aus der Plattform)', intro: 'Konten laut Plattform: ', outro: ' Konten gibt es nur per Antrag im Mitgliederbereich nach Identitätsprüfung; keine Aussage zu Einlagensicherung oder Banklizenzen.' },
+      { key: 'healthbox_packages', slug: 'bridge-healthbox', title: 'Health Box (live aus der Plattform)', intro: 'Health-Box-Angebote laut Plattform: ', outro: ' Keine Gesundheitsversprechen.' },
+      { key: 'shop_products', slug: 'bridge-shop', title: 'Premium Shop (live aus der Plattform)', intro: 'Produkte im Premium Shop: ', outro: ' Bestellungen laufen über den Shop der Plattform; CLOSER löst nichts aus und liest keinen Bestellstatus.' },
+      { key: 'fanshop', slug: 'bridge-fanshop', title: 'Fanshop (live aus der Plattform)', intro: 'Fanshop-Artikel: ', outro: ' Bestellung über den Fanshop der Plattform.' },
+      { key: 'emigration_packages', slug: 'bridge-emigration', title: 'Auswander-Pakete (live aus der Plattform)', intro: 'Pakete zum Auswandern: ', outro: ' Nur nennen, was hier steht; Beratung über „Termin buchen".' },
+    ];
+    for (const g of groups) {
+      const items = list(catalog[g.key]).map((x) => x as Record<string, unknown>).filter(active);
+      if (!items.length) continue;
+      out.push({ slug: g.slug, title: g.title, content: g.intro + items.slice(0, 40).map(line).join(' ') + g.outro, verified: true, source: 'bridge' });
+    }
+  }
+
   const webinars = cache.webinars?.status === 'ok' ? (cache.webinars.data as Record<string, unknown>) : null;
   if (webinars) {
     note(cache.webinars.fetchedAt);
     const items = list(webinars.items).map((w) => w as Record<string, unknown>);
+    const tz = str(webinars.timezone) || 'Europe/Berlin';
     if (items.length) {
       const lines = items.map((w) => {
+        const itemTz = str(w.timezone) || tz;
         const when =
           w.weekday && w.time_local
-            ? `${WEEKDAYS[Number(w.weekday)] ?? ''} um ${str(w.time_local)} Uhr`
+            ? `${WEEKDAYS[Number(w.weekday)] ?? ''} um ${str(w.time_local)} Uhr (${itemTz})`
             : w.next_start
-              ? `nächster Termin ${formatBerlin(str(w.next_start))}`
+              ? `nächster Termin ${formatBerlin(str(w.next_start))} (${itemTz})`
               : '';
         const host = str(w.host) ? `, Moderation ${str(w.host)}` : '';
         return `${str(w.title)} (${str(w.type) === 'PARTNER' ? 'Partner-Webinar' : 'eigenes Webinar'}${host})${when ? `: ${when}` : ''}.`;
       });
       out.push({
         slug: 'bridge-webinars',
-        title: 'Webinare (live aus der Plattform, deutsche Zeit)',
-        content: lines.join(' ') + ' Anmeldung über die Webinar-Seiten auf kickstartercash.club.',
+        title: `Webinare (live aus der Plattform, Zeitzone ${tz})`,
+        content: lines.join(' ') + ` Zeiten immer mit Zeitzone nennen und auf Wunsch in die Ortszeit der Person umrechnen. Vor einer konkreten Terminauskunft live nachschlagen (kcc_nachschlagen webinars). Anmeldung über die Webinar-Seiten auf kickstartercash.club.`,
         verified: true,
         source: 'bridge',
         replaces: ['webinars'],
@@ -182,7 +217,7 @@ export async function bridgeSections(): Promise<{ sections: PromptSection[]; fet
     if (company && str(company.name)) bits.push(`Betreiber: ${str(company.name)}${str(company.city) ? `, ${str(company.city)}` : ''}${str(company.country) ? `, ${str(company.country)}` : ''}.`);
     if (str(content.payout_notice)) bits.push(`Hinweis zu Auszahlungen: ${stripHtml(str(content.payout_notice))}`);
     if (str(content.countdown_date)) bits.push(`Countdown der Plattform: ${str(content.countdown_title) || 'Start'} bis ${formatBerlin(str(content.countdown_date))}.`);
-    const news = list(content.news).map((n) => n as Record<string, unknown>).slice(0, 5);
+    const news = list(content.news).map((n) => n as Record<string, unknown>).filter(running).slice(0, 5);
     if (news.length) bits.push(`Aktuelle Neuigkeiten: ${news.map((n) => str(n.title)).join('; ')}.`);
     if (bits.length) {
       out.push({ slug: 'bridge-content', title: 'Aktuelles (live aus der Plattform)', content: bits.join(' '), verified: true, source: 'bridge', replaces: ['status'] });
@@ -220,15 +255,66 @@ export async function bridgeSections(): Promise<{ sections: PromptSection[]; fet
     const scopes = list(overview.scopes).map((x) => x as Record<string, unknown>);
     const parts: string[] = [];
     for (const sc of scopes) {
-      const where = str(sc.scope) === 'public' ? 'Öffentliche Webseite' : 'Mitgliederbereich';
-      const cats = list(sc.categories).map((c) => c as Record<string, unknown>);
-      const catTxt = cats
-        .map((c) => `${str(c.category)}: ${list(c.items).map((i) => str((i as Record<string, unknown>).title)).filter(Boolean).join(', ')}`)
-        .filter((t) => !t.endsWith(': '));
-      if (catTxt.length) parts.push(`${where} – ${catTxt.join('; ')}.`);
+      const isPublic = str(sc.scope) === 'public';
+      const where = isPublic ? 'Öffentliche Webseite' : 'Mitgliederbereich (nur nach der Anmeldung)';
+      const cats = list(sc.categories).map((c) => c as Record<string, unknown>).filter((c) => list(c.items).length);
+      const catTxt = cats.map((c) => {
+        const items = list(c.items)
+          .map((i) => i as Record<string, unknown>)
+          .map((i) => `${str(i.title)}${str(i.url) ? ` [${str(i.url)}]` : ''}`)
+          .filter((t) => t.trim() && !t.startsWith(' ['));
+        return `${str(c.category)} (${items.length}): ${items.join(', ')}`;
+      });
+      if (catTxt.length) parts.push(`${where}, ${cats.length} Hauptkategorien: ${catTxt.join('; ')}.`);
     }
+    const links: string[] = [];
+    if (str(overview.site_url)) links.push(`Startseite ${str(overview.site_url)}`);
+    if (str(overview.login_url)) links.push(`Login ${str(overview.login_url)}`);
+    if (str(overview.register_url)) links.push(`Registrierung ${str(overview.register_url)}`);
+    if (str(overview.member_area_url)) links.push(`Mitgliederbereich ${str(overview.member_area_url)}`);
     if (parts.length) {
-      out.push({ slug: 'bridge-overview', title: 'Funktionsübersicht der Plattform (live)', content: 'Welche Bereiche es gibt: ' + parts.join(' ') + ' Admin- und Team-Menüs gibt es für Besucher nicht.', verified: true, source: 'bridge' });
+      out.push({
+        slug: 'bridge-overview',
+        title: 'Die ganze Webseite: Hauptkategorien, Menüpunkte und Links (live)',
+        content:
+          'Menü der Webseite laut Plattform; Zahlen sind aus diesen Daten gezählt und ändern sich mit dem Menü. ' +
+          parts.join(' ') +
+          (links.length ? ` Wichtige Adressen: ${links.join(', ')}.` : '') +
+          ' Links nur so nennen, wie sie hier in eckigen Klammern stehen, nie selbst bauen; Links des Mitgliederbereichs nur mit dem Hinweis „nach der Anmeldung". Im Gespräch Links nicht buchstabieren, sondern sagen, wo man sie findet. Admin- und Team-Menüs gibt es für Besucher nicht.',
+        verified: true,
+        source: 'bridge',
+      });
+    }
+  }
+
+  // directory (P18e): Rechtstexte, Team, Services, Partner, Druck-Partner, laufende News, Charity.
+  const directory = avail('directory');
+  if (directory) {
+    const bits: string[] = [];
+    const legal = list(directory.legal).map((x) => x as Record<string, unknown>).filter((x) => str(x.title));
+    if (legal.length) bits.push(`Rechtliches (${legal.length} Texte, nur Titel und Link nennen, nicht auslegen): ${legal.map((x) => `${str(x.title)}${str(x.url) ? ` [${str(x.url)}]` : ''}`).join('; ')}.`);
+    const team = list(directory.team).map((x) => x as Record<string, unknown>).filter((x) => str(x.name));
+    if (team.length) bits.push(`Expertenteam (${team.length}): ${team.map((x) => `${str(x.name)}${str(x.role) ? `, ${str(x.role)}` : ''}${list(x.languages).length ? ` (Sprachen: ${list(x.languages).map(str).join(', ')})` : ''}${str(x.about) ? ` – ${stripHtml(str(x.about)).slice(0, 160)}` : ''}`).join('; ')}. Kontakt zum Team nur über „Termin buchen" oder den Support; keine Telefonnummern oder E-Mail-Adressen von Personen.`);
+    const experts = list(directory.experts).map((x) => x as Record<string, unknown>).filter((x) => str(x.name));
+    if (experts.length) bits.push(`Support-Experten für Mitglieder (${experts.length}): ${experts.map((x) => `${str(x.name)}${str(x.role) ? `, ${str(x.role)}` : ''}${list(x.languages).length ? ` (${list(x.languages).map(str).join(', ')})` : ''}`).join('; ')}.`);
+    const services = list(directory.services).map((x) => x as Record<string, unknown>).filter((x) => str(x.title));
+    if (services.length) bits.push(`Services (${services.length}): ${services.slice(0, 40).map((x) => {
+      const parts = [str(x.title)];
+      const p = eur(x.price_eur as Money); const m = eur(x.price_member_eur as Money); const promo = eur(x.promo_price_eur as Money);
+      if (p) parts.push(p); if (m) parts.push(`für Mitglieder ${m}`); if (promo) parts.push(`Aktion ${promo}${str(x.promo_until) ? ` bis ${str(x.promo_until)}` : ''}`);
+      if (str(x.badge)) parts.push(str(x.badge));
+      return parts.join(', ') + (str(x.summary) ? ` – ${stripHtml(str(x.summary)).slice(0, 160)}` : '') + (str(x.url) ? ` [${str(x.url)}]` : '');
+    }).join('; ')}.`);
+    const partners = list(directory.partners).map((x) => x as Record<string, unknown>).filter((x) => str(x.name));
+    if (partners.length) bits.push(`Partner (${partners.length}): ${partners.slice(0, 40).map((x) => `${str(x.name)}${str(x.summary) ? ` – ${stripHtml(str(x.summary)).slice(0, 120)}` : ''}${str(x.website) ? ` [${str(x.website)}]` : ''}`).join('; ')}. Keine Rabattcodes nennen.`);
+    const print = list(directory.print_partners).map((x) => x as Record<string, unknown>).filter((x) => str(x.name));
+    if (print.length) bits.push(`Druck-Partner (${print.length}): ${print.slice(0, 40).map((x) => `${str(x.name)}${str(x.country_from) || str(x.country_to) ? ` (${[str(x.country_from), str(x.country_to)].filter(Boolean).join(' → ')})` : ''}${str(x.summary) ? ` – ${stripHtml(str(x.summary)).slice(0, 120)}` : ''}`).join('; ')}.`);
+    const news = list(directory.news).map((x) => x as Record<string, unknown>).filter(running).filter((x) => str(x.title));
+    if (news.length) bits.push(`Laufende Mitteilungen (${news.length}): ${news.map((x) => `${str(x.title)}${str(x.text) ? `: ${stripHtml(str(x.text)).slice(0, 300)}` : ''}${str(x.until) ? ` (gilt bis ${formatBerlin(str(x.until))})` : ''}`).join(' | ')}. Vor einer Auskunft zu Mitteilungen live nachschlagen (directory).`);
+    const charity = list(directory.charity).map((x) => x as Record<string, unknown>).filter((x) => str(x.name));
+    if (charity.length) bits.push(`Charity (${charity.length} Organisationen): ${charity.map((x) => `${str(x.name)}${str(x.summary) ? ` – ${stripHtml(str(x.summary)).slice(0, 160)}` : ''}${str(x.website) ? ` [${str(x.website)}]` : ''}`).join('; ')}.`);
+    if (bits.length) {
+      out.push({ slug: 'bridge-directory', title: 'Verzeichnis der Plattform: Rechtliches, Team, Services, Partner, Mitteilungen, Charity (live)', content: bits.join(' ') + ' Leere Gruppen gibt es nicht zu erwähnen.', verified: true, source: 'bridge' });
     }
   }
 
@@ -326,6 +412,16 @@ export async function bridgeSections(): Promise<{ sections: PromptSection[]; fet
   }
 
   return { sections: out, fetchedAt: latest ? (latest as Date).toISOString().slice(0, 10) : null };
+}
+
+/** Mitteilung läuft gerade (Zeitfenster from/until). */
+function running(n: Record<string, unknown>): boolean {
+  const now = Date.now();
+  const from = n.from ? Date.parse(String(n.from)) : NaN;
+  const until = n.until ? Date.parse(String(n.until)) : NaN;
+  if (Number.isFinite(from) && from > now) return false;
+  if (Number.isFinite(until) && until < now) return false;
+  return true;
 }
 
 function stripHtml(s: string): string {

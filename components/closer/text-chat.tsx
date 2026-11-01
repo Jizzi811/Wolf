@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { normalizeBrand } from '@/lib/closer/brand';
+import { lookupPhraseFor } from '@/lib/closer/i18n';
 import { useLanguage } from './ui-context';
 import type { CloserLanguage } from '@/lib/closer/languages';
 import { Send } from './control-icons';
@@ -12,6 +13,8 @@ interface ChatMsg {
   id: string;
   role: 'user' | 'assistant';
   text: string;
+  /** Kurze Ansage „Einen Moment, ich schaue kurz nach." vor einer Antwort mit Live-Daten. */
+  note?: boolean;
 }
 
 interface TextChatProps {
@@ -79,7 +82,7 @@ export function TextChat({ language, agentName, refUsername, visitorId, carryOve
             messages: next.map((m) => ({ role: m.role, text: m.text })),
           }),
         });
-        const json = (await res.json().catch(() => ({}))) as { conversationId?: string; reply?: string; greeting?: string; message?: string; error?: string };
+        const json = (await res.json().catch(() => ({}))) as { conversationId?: string; reply?: string; greeting?: string; message?: string; error?: string; lookups?: string[] };
         if (!res.ok || !json.reply) {
           setError(json.message || (json.error === 'login_required' ? t.sessionEnded : t.retry));
           return;
@@ -93,6 +96,8 @@ export function TextChat({ language, agentName, refUsername, visitorId, carryOve
           additions.push({ id: `${Date.now()}-g`, role: 'assistant', text: json.greeting });
           setGreeted(true);
         }
+        // Hat CLOSER live in der Plattform nachgeschlagen, steht die Ansage davor (wie im Sprachmodus).
+        if (json.lookups?.length) additions.push({ id: `${Date.now()}-n`, role: 'assistant', text: lookupPhraseFor(language.lang), note: true });
         additions.push({ id: `${Date.now()}-a`, role: 'assistant', text: json.reply });
         setMessages((prev) => {
           // Begrüßung vor die erste Nutzer-Nachricht setzen.
@@ -131,6 +136,9 @@ export function TextChat({ language, agentName, refUsername, visitorId, carryOve
         {messages.length === 0 && !busy ? <p className="py-8 text-center text-sm text-muted/70">{t.ready}</p> : null}
         {messages.map((m) => (
           <div key={m.id} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+            {m.note ? (
+              <p className="px-2 text-xs italic text-muted">{m.text}</p>
+            ) : (
             <div className={cn('max-w-[88%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm leading-relaxed', m.role === 'user' ? 'bg-gold/15 text-cream' : 'border border-gold/15 bg-white/[0.03] text-cream/90')}>
               <span className="mb-0.5 block text-[0.62rem] font-semibold uppercase tracking-wider text-gold/60">{m.role === 'user' ? t.you : agentName}</span>
               {normalizeBrand(m.text)}
@@ -140,6 +148,7 @@ export function TextChat({ language, agentName, refUsername, visitorId, carryOve
                 </button>
               ) : null}
             </div>
+            )}
           </div>
         ))}
         {busy ? <p className="px-2 text-xs text-muted">{t.thinking} …</p> : null}

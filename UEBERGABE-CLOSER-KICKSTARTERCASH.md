@@ -253,6 +253,19 @@ getrennt von Admin/Team/User der PHP-Plattform. Einrichtung und Bedienung: `SETU
   Bereiche > Wissens-Datei (knowledge) > Startwissen. Abgleich: stündlich bei Gesprächsstart (changes),
   nachts 03:00 kompletter Abgleich (Vercel-Cron, `?force=1`). `available:false` oder leer = CLOSER weiß
   es nicht und sagt das.
+- **Übergabe v6 „Die ganze Webseite" (01.11.2026):** Bereich `directory` (Rechtstexte, Team, Services,
+  Partner, Druck-Partner, laufende News, Charity) wird mit geladen; `overview` liefert jetzt Menü, Links
+  und `login_required` für Webseite und Mitgliederbereich (Zahlen werden aus den Daten gezählt, nichts
+  fest im Code). Katalog zusätzlich mit Bankkonten, Health Box, Shop, Fanshop, Auswander-Paketen.
+  Live-Nachschlagen per Funktion `kcc_nachschlagen(bereich, stichwort?)` (`lib/bridge/lookup.ts`): Ansage
+  „Einen Moment, ich schaue kurz nach" in der Kundensprache (Vapi `request-start`, im Textmodus als
+  Zeile über der Antwort), Abruf ohne Zwischenspeicher mit 4 s Limit, Rückfall auf den letzten Stand,
+  nie eine Fehlermeldung an die Person. Aktuell halten ohne Redeploy: `changes?since=` bei jedem neuen
+  Gespräch (max. 1×/Minute), im Textmodus je Nachricht und im Sprachmodus alle 5 Minuten
+  (`/api/bridge/refresh`), nur geänderte Bereiche werden nachgeladen; Cron 03:00 bleibt als Vollabgleich.
+  Prompt-Regeln: Links nur aus overview/directory, Mitglieder-Links nur „nach der Anmeldung", keine
+  persönlichen Daten, keine Admin-/Team-Seiten, Webinare mit Zeitzone, keine feste Paket-Anzahl, keine
+  Gutschein-/Rabattcodes, keine Telefon/E-Mail von Personen, Rechtstexte nur Titel und Link.
 - **Entscheidungen übernommen:** Kash wird ersetzt (CLOSER beantwortet alle allgemeinen Plattform-
   fragen; Kash-Wissen kommt über `knowledge`/`learned`), Support-Blase ja, Firmenname nein, Anrede du.
 - **Zusätzlich (7.5):** Offline-Erkennung, Mikrofon verweigert → Hinweis + Textmodus-Angebot, Abbruch
