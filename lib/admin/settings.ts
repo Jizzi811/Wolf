@@ -203,6 +203,8 @@ const LEGACY_PERSONA: { field: keyof PersonaSettings; old: RegExp; now: () => st
   { field: 'tagline', old: /Johanns digitaler Gesprächspartner/i, now: () => DEFAULT_SETTINGS.persona.tagline },
   { field: 'imageUrl', old: /^\/johann-orb\.png$/i, now: () => DEFAULT_SETTINGS.persona.imageUrl },
   { field: 'systemPrompt', old: /Johanns charismatischer Voice Agent/i, now: () => DEFAULT_SETTINGS.persona.systemPrompt },
+  // v6: keine feste Paket-Anzahl im Prompt; wer den Standardtext nie geändert hat, bekommt die neue Fassung.
+  { field: 'systemPrompt', old: /die vier Mitgliedschafts-Pakete/i, now: () => DEFAULT_SETTINGS.persona.systemPrompt },
 ];
 
 function applyLegacyFixes(all: AllSettings): AllSettings {

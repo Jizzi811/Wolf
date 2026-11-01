@@ -6,7 +6,8 @@
  */
 
 import { BRAND, BRAND_PROMPT_RULE, SPOKEN_REPLACEMENTS } from '@/lib/closer/brand';
-import { greetingFor, greetingForMode } from '@/lib/closer/i18n';
+import { greetingFor, greetingForMode, lookupPhraseFor } from '@/lib/closer/i18n';
+import { bridgeConfigured } from '@/lib/bridge/client';
 import { addressPromptRule, getAddressMode, hasTvDistinction } from '@/lib/closer/address';
 import { getLanguage, type CloserLanguage } from '@/lib/closer/languages';
 import { buildKnowledgePrompt, getPromptSections } from './knowledge';
@@ -122,6 +123,10 @@ export async function buildSystemContent(ctx: AssistantContext, s?: AllSettings)
     ? 'OFFENE FRAGEN: Wenn dir zu einer Sachfrage über Kickstartercash.Club die Information fehlt, sag das ehrlich und rufe einmal die Funktion offene_frage mit der Frage auf (ohne Namen oder Kontaktdaten), damit das Team sie nachträgt.'
     : '';
 
+  const liveNote = toolsAvailable && bridgeConfigured()
+    ? `LIVE-NACHSCHLAGEN (ganze Webseite): Du kennst die Webseite von Kickstartercash.Club über die Plattformdaten: alle Hauptkategorien und Menüpunkte (Bereich overview, öffentlich und Mitgliederbereich), Handbuch, Webinare, Angebote, Rechtstexte, Team, Services, Partner, Charity, Mitteilungen (directory). Was sich ändern kann, schlägst du mit der Funktion kcc_nachschlagen live nach – IMMER bei: Webinar-Terminen, Preisen und Paketen, Karten, Bankkonten, Auswandern, Health Box, Shop und Fanshop, Mitteilungen/News, Team, Services, Partnern, Rechtlichem, und wenn jemand fragt, wo er etwas findet (Link). Menü, Handbuch und Wissensdatei aus dem Gedächtnis reichen, wenn nichts Aktuelles gefragt ist. Vor einem echten Nachschlagen sagst du einen kurzen Satz in der Sprache der Person, sinngemäß: „${lookupPhraseFor(language.lang)}" – nicht bei jeder Kleinigkeit, nur wenn du wirklich nachschaust. Danach antwortest du nur mit dem, was ankam. Antwortet die Plattform nicht, nutzt du den letzten Stand, erfindest nichts und zeigst der Person keine Fehlermeldung; stattdessen: „Dazu schaue ich gleich noch einmal nach – worum geht es Ihnen genau?" oder der Weg über Termin buchen oder Support. REGELN: Hauptkategorien und Menüpunkte nennst du nur aus overview, Zahlen dazu zählst du aus den Daten. Links nur aus overview oder directory (Feld url), nie selbst bauen oder raten; öffentliche Links darfst du sofort nennen, Links aus dem Mitgliederbereich nur mit „nach der Anmeldung" (zum Beispiel: „Das finden Sie nach dem Login unter …"). Persönliche Daten (Guthaben, Wallet, Zahlungsdaten, Tickets, Mailbox, Bestellungen, Profil, KYC) liest du nie; fragt jemand „wie viel Guthaben habe ich?", erklärst du freundlich, wo es nach der Anmeldung steht. Admin- und Team-Seiten gibt es für dich nicht; danach gefragt: „Dazu kann ich Ihnen nichts sagen." Webinar-Zeiten immer mit Zeitzone, auf Wunsch in die Ortszeit der Person umgerechnet. Keine feste Anzahl von Paketen auswendig, nur was die Daten zeigen. Keine Gutschein- oder Rabattcodes, keine Telefonnummern oder E-Mail-Adressen von Personen (Kontakt zum Team über „Termin buchen" oder Support), keine Einkommens-, Rendite-, Kredit- oder Anlageversprechen, keine Rechtsauslegung (Rechtstexte nur Titel und Link). Leere Listen oder nicht freigegebene Bereiche erwähnst du nicht. Vorrang bei Widerspruch: freigegebene Antworten (learned) vor Live-Daten vor Wissensdatei vor deinem Startwissen.`
+    : '';
+
   const historyNote = ctx.history?.trim()
     ? `BISHERIGER VERLAUF (die Person hat gerade die Sprache gewechselt; knüpfe daran an, ohne alles zu wiederholen): ${ctx.history.trim().slice(0, 2500)}`
     : '';
@@ -136,6 +141,7 @@ export async function buildSystemContent(ctx: AssistantContext, s?: AllSettings)
     disclosure,
     leadNote,
     openQuestionNote,
+    liveNote,
     historyNote,
   ]
     .filter(Boolean)
@@ -143,10 +149,23 @@ export async function buildSystemContent(ctx: AssistantContext, s?: AllSettings)
   return { content, settings, language, toolsAvailable };
 }
 
-function toolList(settings: AllSettings): unknown[] {
+function toolList(settings: AllSettings, lang: string): unknown[] {
   const tools: unknown[] = [
     { type: 'function', async: false, function: TOOL_DEFINITIONS.offene_frage, messages: [{ type: 'request-start', content: 'Ich notiere das für das Team.' }] },
   ];
+  if (bridgeConfigured()) {
+    // Live-Nachschlagen: Ansage in der Sprache der Person, dann Abruf ohne Zwischenspeicher (4 s Limit).
+    tools.unshift({
+      type: 'function',
+      async: false,
+      function: TOOL_DEFINITIONS.kcc_nachschlagen,
+      messages: [
+        { type: 'request-start', content: lookupPhraseFor(lang) },
+        { type: 'request-failed', content: lookupPhraseFor(lang) },
+        { type: 'request-response-delayed', content: lookupPhraseFor(lang), timingMilliseconds: 3000 },
+      ],
+    });
+  }
   if (settings.features.leadCapture) {
     tools.push({ type: 'function', async: false, function: TOOL_DEFINITIONS.erfasse_lead, messages: [{ type: 'request-start', content: 'Einen Moment, ich speichere das.' }] });
   }
@@ -194,7 +213,7 @@ export async function buildAssistantConfig(ctx: AssistantContext): Promise<Assis
   if (base) {
     cfg.serverMessages = ['end-of-call-report', 'tool-calls'];
     cfg.server = { url: `${base}/api/vapi/webhook`, timeoutSeconds: 20 };
-    cfg.model.tools = toolList(s);
+    cfg.model.tools = toolList(s, language.lang);
   }
   return cfg;
 }

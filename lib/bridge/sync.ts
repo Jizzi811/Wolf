@@ -6,10 +6,10 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { bridgeConfigured, callBridge, type BridgeRoute } from './client';
 
-/** Lese-Bereiche der Brücke. P18 (Basis) + P18c (Version 1.1.0, 01.11.2026). Neue Bereiche hier ergänzen. */
+/** Lese-Bereiche der Brücke. P18 (Basis) + P18c (Version 1.1.0) + P18e (directory, 01.11.2026). Neue Bereiche hier ergänzen. */
 export const READ_AREAS: BridgeRoute[] = [
   'catalog', 'webinars', 'channels', 'content', 'knowledge',
-  'overview', 'relocation', 'guides', 'promo', 'realestate', 'social', 'tour', 'learned',
+  'overview', 'relocation', 'guides', 'promo', 'realestate', 'social', 'tour', 'learned', 'directory',
 ];
 
 export interface SyncReport {
@@ -25,12 +25,30 @@ export async function getBridgeCache(): Promise<Record<string, typeof schema.bri
   return Object.fromEntries(rows.map((r) => [r.area, r]));
 }
 
-async function upsert(area: string, patch: Partial<typeof schema.bridgeCache.$inferInsert>) {
+/** Speichert einen Bereich im Zwischenspeicher (auch vom Live-Nachschlagen genutzt). */
+export async function saveArea(area: string, patch: Partial<typeof schema.bridgeCache.$inferInsert>) {
   const d = await db();
   await d
     .insert(schema.bridgeCache)
     .values({ area, ...patch })
-    .onConflictDoUpdate({ target: schema.bridgeCache.area, set: patch });
+    .onConflictDoUpdate({ target: schema.bridgeCache.area, set: { ...patch, area } });
+}
+const upsert = saveArea;
+
+/**
+ * Abgleich bei Bedarf: fragt `changes?since=` ab, wenn der letzte Abgleich älter
+ * als maxAgeMs ist (Standard 5 Minuten). Wird bei jedem Gesprächsstart, im
+ * Textmodus je Nachricht und im Sprachmodus alle 5 Minuten vom Browser angestoßen.
+ * Mehrere gleichzeitige Aufrufe laufen nur einmal.
+ */
+let inflight: Promise<SyncReport> | null = null;
+export async function syncBridgeIfStale(maxAgeMs = 5 * 60 * 1000): Promise<{ ran: boolean; report?: SyncReport }> {
+  if (!bridgeConfigured()) return { ran: false };
+  const cache = await getBridgeCache();
+  const last = cache.health?.fetchedAt?.getTime() ?? 0;
+  if (Date.now() - last < maxAgeMs) return { ran: false };
+  if (!inflight) inflight = syncBridge().finally(() => { inflight = null; });
+  return { ran: true, report: await inflight };
 }
 
 /** Lädt alle Lese-Bereiche (oder nur geänderte) und speichert sie. */
@@ -66,14 +84,15 @@ export async function syncBridge(opts: { force?: boolean } = {}): Promise<SyncRe
       .map((r) => r.fetchedAt as Date)
       .sort((a, b) => a.getTime() - b.getTime())[0];
     if (since) {
-      const ch = await callBridge<{ areas: Record<string, { hash: string; changed: boolean }> }>('changes', {
+      const ch = await callBridge<{ areas: Record<string, { hash?: string; changed?: boolean; changed_at?: string }> }>('changes', {
         query: { since: toBerlinIso(since) },
       });
       if (ch.body?.ok && ch.body.data?.areas) {
         changed = {};
         for (const [area, v] of Object.entries(ch.body.data.areas)) {
           const cached = cache[area];
-          changed[area] = v.changed || !cached?.hash || cached.hash !== v.hash;
+          // Hash entscheidet; ohne Hash zählt die Änderungsmeldung der Plattform.
+          changed[area] = cached?.status === 'ok' && cached.hash && v.hash ? cached.hash !== v.hash : v.changed !== false || !cached?.hash;
         }
       }
     }
@@ -87,6 +106,8 @@ export async function syncBridge(opts: { force?: boolean } = {}): Promise<SyncRe
     }
     if (changed && changed[area] === false) {
       const cached = (await getBridgeCache())[area];
+      // Unverändert laut Plattform: Stand ist damit „jetzt" bestätigt.
+      await upsert(area, { fetchedAt: new Date() });
       report.areas[area] = { status: 'unchanged', ...countEntries(cached?.data) };
       continue;
     }

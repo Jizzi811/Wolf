@@ -5,7 +5,8 @@ import { getSettings } from '@/lib/admin/settings';
 import { TOOL_DEFINITIONS, runTool } from '@/lib/admin/tools';
 import { endConversation, recordEvent, startConversation } from '@/lib/admin/tracking';
 import { getCurrentUser } from '@/lib/auth/session';
-import { newConversationId } from '@/lib/bridge/client';
+import { bridgeConfigured, newConversationId } from '@/lib/bridge/client';
+import { syncBridgeIfStale } from '@/lib/bridge/sync';
 import { normalizeBrand } from '@/lib/closer/brand';
 import { getLanguage } from '@/lib/closer/languages';
 import { hasDatabase } from '@/lib/db';
@@ -58,9 +59,10 @@ export async function POST(req: Request) {
   ];
 
   let reply: string;
+  const lookups: string[] = [];
   try {
     reply = openaiKey
-      ? await askOpenAI(openaiKey, settings.model.model, settings.model.temperature, content, history, settings.features.leadCapture, { conversationId, refUsername, language: language.lang })
+      ? await askOpenAI(openaiKey, settings.model.model, settings.model.temperature, content, history, settings.features.leadCapture, { conversationId, refUsername, language: language.lang }, lookups)
       : await askVapi(vapiKey as string, settings.model.model, content, history);
   } catch (e) {
     console.error('chat', e);
@@ -77,13 +79,15 @@ export async function POST(req: Request) {
           await recordEvent({ type: 'conversation_start', conversationId, visitorId: b.v ?? null, userId, path: '/', meta: { lang: language.lang, mode: 'text' } });
         }
         await endConversation({ conversationId, transcript, storeTranscript: settings.features.storeTranscripts, endedReason: 'text-laufend', keepOpen: true });
+        // Speicher aktuell halten: Änderungsabgleich, wenn der letzte älter als 5 Minuten ist.
+        if (settings.features.bridgeAutoSync && bridgeConfigured()) await syncBridgeIfStale();
       } catch (e) {
         console.error('chat/after', e);
       }
     });
   }
 
-  return NextResponse.json({ conversationId, reply, lang: language.lang, greeting: isNew ? greeting : undefined });
+  return NextResponse.json({ conversationId, reply, lang: language.lang, greeting: isNew ? greeting : undefined, lookups: lookups.length ? lookups : undefined });
 }
 
 type ChatMsg = { role: 'system' | 'user' | 'assistant' | 'tool'; content: string | null; tool_call_id?: string; tool_calls?: unknown[] };
@@ -95,14 +99,16 @@ async function askOpenAI(
   system: string,
   history: { role: 'user' | 'assistant'; content: string }[],
   leadCapture: boolean,
-  ctx: { conversationId: string; refUsername: string | null; language: string }
+  ctx: { conversationId: string; refUsername: string | null; language: string },
+  lookups: string[] = []
 ): Promise<string> {
   const tools = [
+    ...(bridgeConfigured() ? [{ type: 'function', function: TOOL_DEFINITIONS.kcc_nachschlagen }] : []),
     { type: 'function', function: TOOL_DEFINITIONS.offene_frage },
     ...(leadCapture ? [{ type: 'function', function: TOOL_DEFINITIONS.erfasse_lead }] : []),
   ];
   const messages: ChatMsg[] = [{ role: 'system', content: system }, ...history];
-  for (let round = 0; round < 3; round++) {
+  for (let round = 0; round < 4; round++) {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
@@ -117,6 +123,7 @@ async function askOpenAI(
       for (const call of msg.tool_calls) {
         let args: Record<string, unknown> = {};
         try { args = JSON.parse(call.function.arguments || '{}') as Record<string, unknown>; } catch { args = {}; }
+        if (call.function.name === 'kcc_nachschlagen' && typeof args.bereich === 'string') lookups.push(args.bereich);
         const result = await runTool(call.function.name, args, ctx);
         messages.push({ role: 'tool', tool_call_id: call.id, content: result });
       }

@@ -93,10 +93,31 @@ gesetzt. `VAPI_WEBHOOK_SECRET` schützt die Adresse.
 Sobald Paket P18 auf der Plattform eingespielt ist: Plattform-Admin →
 „CLOSER-Anbindung“ → „Schlüssel erzeugen“ → in Vercel als `KCC_BRIDGE_SECRET`
 eintragen, `KCC_BRIDGE_URL` dazu, Redeploy, dann im Admin → Plattform-Anbindung
-→ „Alles neu laden“. Ab dann kommen Pakete, Karten, Provisionen, Webinare,
-Kanäle und Texte automatisch; die manuellen Abschnitte dazu werden als
-„überholt durch Plattform“ markiert. Abgleich: täglich (Vercel-Cron) und bei
-Gesprächsstart, wenn der letzte Stand älter als eine Stunde ist.
+→ „Alles neu laden“. Ab dann kommen Pakete, Karten, Bankkonten, Provisionen,
+Webinare, Kanäle, Texte, Menü und Links, Handbuch, Auswandern, Immobilien,
+Werbemittel, Rechtstexte, Team, Services, Partner, Mitteilungen und Charity
+automatisch; die manuellen Abschnitte dazu werden als „überholt durch Plattform“
+markiert.
+
+**Aktuell halten (seit 01.11.2026, Übergabe v6):** bei jedem neuen Gespräch und in
+langen Gesprächen alle 5 Minuten fragt der Agent die Plattform nach Änderungen
+(`changes?since=…`) und lädt nur geänderte Bereiche nach. Nachts um 3 Uhr lädt
+der Vercel-Cron alles neu. Kein Redeploy nötig, wenn Nadja im Menü-Builder oder
+bei den Angeboten etwas ändert.
+
+**Live nachschlagen („Einen Moment, ich schaue kurz nach“):** Für alles, was sich
+ändern kann (Webinar-Termine, Preise, Pakete, Karten, Bankkonten, Auswandern,
+Health Box, Shop, Mitteilungen, Team, Services, Partner, Rechtliches, Links), hat
+der Agent die Funktion `kcc_nachschlagen(bereich, stichwort?)`. Er sagt vorher
+den kurzen Satz in der Sprache der Person, ruft den Bereich ohne Zwischenspeicher
+ab (Zeitlimit 4 Sekunden) und antwortet nur mit dem, was ankam. Antwortet die
+Plattform nicht, nutzt er den letzten gespeicherten Stand und zeigt keine
+Fehlermeldung. Im Textmodus erscheint der Satz als kleine Zeile über der Antwort.
+Code: `lib/bridge/lookup.ts`, `lib/admin/tools.ts`.
+
+Der Agent liest nie persönliche Mitglieder-Daten (Guthaben, Wallet, Tickets …),
+kennt keine Admin- und Team-Seiten und nennt Links des Mitgliederbereichs nur mit
+dem Hinweis „nach der Anmeldung“.
 
 Ref-Links: `https://closer-henna.vercel.app/?ref=<benutzername>` – der Agent
 merkt sich den Empfehler 30 Tage im Browser und gibt ihn mit dem Lead weiter.

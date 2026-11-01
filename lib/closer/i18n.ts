@@ -492,3 +492,44 @@ export function greetingForMode(lang: string, mode: 'ask' | 'sie' | 'du', askAll
   }
   return polite;
 }
+
+/** „Einen Moment, ich schaue kurz nach." – Ansage vor dem Live-Nachschlagen (neutral, ohne Du/Sie). */
+export const LOOKUP_PHRASES: Record<string, string> = {
+  de: 'Einen Moment, ich schaue kurz nach.',
+  en: 'One moment, let me check that for you.',
+  tr: 'Bir saniye, hemen bakıyorum.',
+  fr: 'Un instant, je vérifie.',
+  es: 'Un momento, lo compruebo.',
+  it: 'Un attimo, controllo subito.',
+  pt: 'Um momento, vou verificar.',
+  nl: 'Een moment, ik kijk het even na.',
+  pl: 'Chwileczkę, zaraz sprawdzę.',
+  ru: 'Минутку, сейчас проверю.',
+  uk: 'Хвилинку, зараз перевірю.',
+  cs: 'Moment, hned se podívám.',
+  sk: 'Moment, hneď sa pozriem.',
+  hu: 'Egy pillanat, máris megnézem.',
+  ro: 'Un moment, verific imediat.',
+  bg: 'Един момент, ще проверя.',
+  el: 'Μια στιγμή, το ελέγχω.',
+  sv: 'Ett ögonblick, jag kollar.',
+  da: 'Et øjeblik, jeg tjekker lige.',
+  no: 'Et øyeblikk, jeg sjekker.',
+  fi: 'Hetkinen, tarkistan.',
+  ar: 'لحظة من فضلك، سأتحقق من ذلك.',
+  he: 'רגע אחד, אני בודק.',
+  hi: 'एक पल, मैं अभी देखता हूँ।',
+  id: 'Sebentar, saya cek dulu.',
+  ms: 'Sebentar, saya semak dulu.',
+  vi: 'Một chút thôi, tôi kiểm tra ngay.',
+  th: 'สักครู่นะคะ กำลังตรวจสอบ',
+  ja: '少々お待ちください。確認します。',
+  ko: '잠시만요, 확인해 보겠습니다.',
+  zh: '请稍等，我查一下。',
+  sw: 'Subiri kidogo, ninaangalia.',
+};
+
+export function lookupPhraseFor(lang: string): string {
+  const base = lang.startsWith('zh') ? 'zh' : lang.split('-')[0];
+  return LOOKUP_PHRASES[base] ?? LOOKUP_PHRASES.en;
+}

@@ -146,6 +146,15 @@ export function useVapi(): UseVapiReturn {
 
   const state: CloserState = !isConnected ? (connecting ? 'connecting' : 'disconnected') : speaking ? 'speaking' : thinking ? 'thinking' : 'listening';
 
+  // Lange Gespräche: alle 5 Minuten die Plattform nach Änderungen fragen lassen (Server lädt nur Geändertes).
+  useEffect(() => {
+    if (!isConnected) return;
+    const id = window.setInterval(() => {
+      fetch('/api/bridge/refresh', { method: 'POST', keepalive: true }).catch(() => null);
+    }, 5 * 60 * 1000);
+    return () => window.clearInterval(id);
+  }, [isConnected]);
+
   const pushMessage = useCallback((m: TranscriptMessage) => {
     setMessages((prev) => {
       const next = [...prev, m];

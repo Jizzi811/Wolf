@@ -1,5 +1,5 @@
 /**
- * Client für die signierte Brücke zur Plattform (Paket P18).
+ * Client für die signierte Brücke zur Plattform (Paket P18, P18c, P18e).
  * 1:1 nach der Rückmeldung des Plattform-Chats: HMAC-SHA256 über
  * Timestamp \n Nonce \n METHODE \n ZIEL \n sha256(Body).
  */
@@ -21,6 +21,7 @@ export type BridgeRoute =
   | 'social'
   | 'tour'
   | 'learned'
+  | 'directory'
   | 'changes'
   | 'lead'
   | 'conversation'
